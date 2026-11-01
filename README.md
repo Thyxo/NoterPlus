@@ -4,6 +4,8 @@ En PWA, der ligner iPhonens **Noter**-app (iOS 26, mørk tilstand). Skallen (map
 
 Den viser en "håndskrevet" note. Holdt normalt står der et tal. Vendes telefonen, står der tilskuerens navn. Appen er forbundet med lommeregneren ([Calcplus](https://github.com/Thyxo/Calcplus)), så lommeregneren automatisk tvinger det samme tal. Ren vanilla JS, intet build-trin.
 
+**Adresse:** https://noterplus.vercel.app (Vercel-projekt *noterplus*, udgives ved push til `main`)
+
 ---
 
 ## Rutinen
