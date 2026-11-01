@@ -88,7 +88,7 @@ function measure(ctx, glyphs, size, useFont) {
  * Tegn glyfferne i tal-visning. Hvert tegn drejes om sit eget midtpunkt i højde med
  * cifrenes midte – præcis som hvis hele linjen blev drejet 180°.
  */
-function drawGlyphs(ctx, glyphs, size, useFont, cx0, cy, color) {
+function drawGlyphs(ctx, glyphs, size, useFont, cx0, cy, color, reveal = null) {
   const advs = measure(ctx, glyphs, size, useFont);
   const b = band(ctx, size, useFont);
   let x = cx0;
@@ -98,6 +98,14 @@ function drawGlyphs(ctx, glyphs, size, useFont, cx0, cy, color) {
     const adv = advs[i];
     if (g.ch !== ' ') {
       ctx.save();
+      // Tegnet der lige "skrives": vis kun en del, fra venstre mod højre set i navne-vejen
+      if (reveal && reveal.index === i) {
+        const p = Math.max(0, Math.min(1, reveal.p));
+        ctx.beginPath();
+        // navne-vejen er hele tegningen drejet 180°, så dens venstre side er tegnets højre side her
+        ctx.rect(x + adv * (1 - p), -1e4, adv * p + 1, 2e4);
+        ctx.clip();
+      }
       ctx.font = `${size}px ${famFor(g, useFont)}`;
       ctx.translate(x + adv / 2, cy);
       if (g.rot) ctx.rotate(Math.PI);
@@ -113,7 +121,7 @@ function drawGlyphs(ctx, glyphs, size, useFont, cx0, cy, color) {
  * Tegn en "håndskrevet" tegning ind i et canvas (som en tegning i Noter).
  * @returns {{width:number,height:number,size:number}}
  */
-export function renderInk(canvas, glyphs, { size = 86, maxWidth = 320, color = '#fff', useFont = fontReady } = {}) {
+export function renderInk(canvas, glyphs, { size = 86, maxWidth = 320, color = '#fff', useFont = fontReady, reveal = null } = {}) {
   const dpr = Math.min(3, window.devicePixelRatio || 1);
   const ctx = canvas.getContext('2d');
   let s = size;
@@ -128,7 +136,7 @@ export function renderInk(canvas, glyphs, { size = 86, maxWidth = 320, color = '
   canvas.style.height = H + 'px';
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, W, H);
-  drawGlyphs(ctx, glyphs, s, useFont, padX, H / 2, color);
+  drawGlyphs(ctx, glyphs, s, useFont, padX, H / 2, color, reveal);
   return { width: W, height: H, size: s };
 }
 

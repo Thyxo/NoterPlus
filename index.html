@@ -179,6 +179,8 @@
 
     </div>
 
+    <input id="inkInput" class="ink-input" type="text" autocomplete="off" autocorrect="off" autocapitalize="words"
+           spellcheck="false" enterkeyhint="done" aria-hidden="true" tabindex="-1" />
     <input type="file" id="imagePicker" accept="image/*" hidden />
 
     <!-- ============ PERFORMER ============ -->
@@ -228,21 +230,29 @@
         <p class="pv-warn" id="pvWarn"></p>
       </div>
 
-      <p class="field-note">Tilskueren skriver selv navnet</p>
+      <p class="field-note">Navnet</p>
       <div class="field-card">
         <label class="field">
           <span>I søgefeltet</span>
           <input type="checkbox" class="switch" id="capSearch" />
         </label>
         <label class="field">
-          <span>I en ny note (1. linje)</span>
-          <input type="checkbox" class="switch" id="capNote" />
+          <span>Ny note</span>
+          <select id="newNoteMode">
+            <option value="ink">Du taster navnet → håndskrift</option>
+            <option value="capture">Tilskueren skriver (1. linje)</option>
+            <option value="plain">Almindelig note</option>
+          </select>
         </label>
         <button class="field link" id="clearUserNotes" type="button"><span>Slet tilskuernes noter</span></button>
       </div>
 
-      <p class="field-note">Noten</p>
+      <p class="field-note">Forudsigelses-noten</p>
       <div class="field-card">
+        <label class="field">
+          <span>Vis noten i listen</span>
+          <input type="checkbox" class="switch" id="showPrediction" />
+        </label>
         <label class="field">
           <span>Titel</span>
           <input id="noteTitle" type="text" autocomplete="off" autocapitalize="sentences" />
@@ -280,6 +290,14 @@
 
       <p class="field-note">Vending</p>
       <div class="field-card">
+        <label class="field">
+          <span>Skrevet</span>
+          <select id="inkLie">
+            <option value="left">Liggende – toppen mod venstre</option>
+            <option value="right">Liggende – toppen mod højre</option>
+            <option value="up">Opret</option>
+          </select>
+        </label>
         <label class="field">
           <span>Når noten åbnes</span>
           <select id="startSide">

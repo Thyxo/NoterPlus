@@ -2,7 +2,7 @@
    Noter+ — falsk Noter-app med Cryptext-forudsigelse
    Skallen (lister, editor, glas-design, hjemmeskærm) er fra notes-app.
    ========================================================= */
-import { planName, planNumber, danishGroup, normalizeName } from './crypt.js';
+import { planName, planNumber, danishGroup, normalizeName, bestCase, applyCase } from './crypt.js';
 import { createLink, cleanRoom, newRoomCode } from './link.js';
 import {
   installFont, restoreFont, removeFont, isFontReady, loadedFontName,
@@ -21,6 +21,10 @@ const fallbackState = {
   number: '2100',
   capSearch: true,
   capNote: true,
+  newNoteMode: 'ink', // ink = du taster navnet, det vises som håndskrift · capture = tilskueren skriver · plain
+  inkLie: 'left', // up | left | right – liggende = skrevet på langs af skærmen
+  showPrediction: true,
+  nameExact: false, // navnet kom fra en håndskrift-note: brug præcis de store/små bogstaver
   noteTitle: 'Forudsigelse',
   noteText: '',
   noteWhen: 'yesterday',
@@ -100,7 +104,7 @@ function planOptions() {
 function currentPlan() {
   if (state.source === 'number') return planNumber(state.number);
   if (state.source === 'calc') return planNumber(state.calcResult?.value || '');
-  return planName(state.name, planOptions());
+  return planName(state.name, { ...planOptions(), caseMode: state.nameExact ? 'asTyped' : state.caseMode });
 }
 
 /* Forcetallet sendes til lommeregneren, når navn eller tal ændres her */
@@ -129,10 +133,11 @@ function cmapPayload() {
   return { font: o.font, map: o.map, scores: o.scores, preferDigits: o.preferDigits, caseMode: o.caseMode, at: Date.now() };
 }
 
-function setName(raw) {
+function setName(raw, exact = false) {
   const clean = normalizeName(raw);
   if (!clean) return;
   state.name = clean;
+  state.nameExact = exact;
   state.source = 'name';
   saveState();
   publishForce({ now: true });
@@ -149,6 +154,7 @@ function onRemote(remote) {
     if (f.name) {
       state.source = 'name';
       state.name = f.name;
+      state.nameExact = false;
     } else if (f.digits) {
       state.source = 'number';
       state.number = f.digits;
@@ -273,7 +279,7 @@ function predictionDate() {
 function getNotes() {
   const pd = predictionDate();
   const notes = [
-    {
+    state.showPrediction && {
       id: 'prediction',
       title: state.noteTitle || 'Forudsigelse',
       when: pd,
@@ -332,8 +338,13 @@ function getNotes() {
       preview: 'Nøgle til kælderen hos viceværten',
       body: ['Nøgle til kælderen hos viceværten', 'Dæk til den lilles cykel: 24"', 'Lappegrej i skuffen'],
     },
-  ];
+  ].filter(Boolean);
   for (const u of state.userNotes) {
+    if (u.ink) {
+      // iOS bruger den genkendte håndskrift som titel
+      notes.push({ id: u.id, title: applyCase(normalizeName(u.cased || ''), 'title') || 'Ny note', when: new Date(u.at), preview: 'Håndskrift', user: true, ink: true, inkUser: true });
+      continue;
+    }
     const lines = (u.text || '').split('\n');
     notes.push({
       id: u.id,
@@ -440,16 +451,38 @@ function inkColor() {
   return getComputedStyle(document.documentElement).getPropertyValue('--note-text').trim() || '#fff';
 }
 
-function drawPrediction() {
+function notePlan(note) {
+  if (note?.inkUser) {
+    const u = state.userNotes.find((x) => x.id === note.id);
+    return planName(u?.cased || '', { ...planOptions(), caseMode: 'asTyped' });
+  }
+  return currentPlan();
+}
+
+const LIE = { up: 0, left: 90, right: -90 };
+
+function drawPrediction(reveal = null) {
   const canvas = notePage.querySelector('canvas.ink');
   if (!canvas) return;
-  const plan = currentPlan();
-  const width = Math.max(200, notePage.clientWidth - 52);
-  renderInk(canvas, plan.glyphs.length ? plan.glyphs : [{ ch: ' ', rot: 0 }], {
-    size: Number(state.inkSize) || 96,
-    maxWidth: width,
+  const note = selectedNote();
+  const plan = notePlan(note);
+  const lying = state.inkLie !== 'up';
+  // Liggende: teksten løber langs skærmens højde
+  // Mens du taster, dækker tastaturet bunden: hold navnet i det synlige stykke
+  const typing = document.activeElement === inkInput;
+  const visible = (window.visualViewport?.height || window.innerHeight) - notePage.getBoundingClientRect().top - 40;
+  const room = lying ? (typing ? Math.min(notePage.clientHeight - 150, visible) : notePage.clientHeight - 150) : notePage.clientWidth - 52;
+  notePage.querySelector('.ink-note')?.classList.toggle('typing', typing);
+  const size = (Number(state.inkSize) || 96) * (lying ? 1.35 : 1);
+  const box = renderInk(canvas, plan.glyphs.length ? plan.glyphs : [{ ch: ' ', rot: 0 }], {
+    size,
+    maxWidth: Math.max(200, Math.min(room, 760)),
     color: inkColor(),
+    reveal,
   });
+  const wrap = canvas.parentElement;
+  wrap.classList.toggle('lie', lying);
+  wrap.style.height = lying ? `${Math.max(box.width, 120) + 24}px` : '';
   applyFlip(false);
 }
 
@@ -457,14 +490,15 @@ function applyFlip(animate) {
   const canvas = notePage.querySelector('canvas.ink');
   if (canvas) {
     canvas.classList.toggle('spin', !!animate);
-    canvas.style.transform = flipped ? 'rotate(180deg)' : '';
+    const deg = (LIE[state.inkLie] || 0) + (flipped ? 180 : 0);
+    canvas.style.transform = deg ? `rotate(${deg}deg)` : '';
   }
   syncFlipSpot();
 }
 
 function selectedNote() {
   const notes = getNotes();
-  return notes.find((item) => item.id === state.selectedNote) || notes.find((n) => n.id === 'prediction');
+  return notes.find((item) => item.id === state.selectedNote) || notes.find((n) => n.id === 'prediction') || notes[0];
 }
 
 function renderNotePage() {
@@ -472,6 +506,17 @@ function renderNotePage() {
   navTitleEditor.textContent = note.user ? '' : note.title;
 
   let inner = '';
+  if (note.inkUser) {
+    notePage.innerHTML = `
+      <div class="note-body ink-note">
+        <div class="stamp">${esc(note.stamp)}</div>
+        <div class="ink-wrap"><canvas class="ink" aria-label="Håndskrift"></canvas></div>
+      </div>`;
+    drawPrediction();
+    notePage.scrollTop = 0;
+    syncFlipSpot();
+    return;
+  }
   if (note.user) {
     const u = state.userNotes.find((x) => x.id === note.id);
     notePage.innerHTML = `
@@ -538,6 +583,7 @@ function openNote(id) {
   state.selectedNote = id;
   saveState();
   if (id === 'prediction') flipped = state.startSide === 'name';
+  else if (state.userNotes.find((x) => x.id === id)?.ink) flipped = true; // navnet op, som det blev skrevet
   renderNotes();
   renderNotePage();
   setView('editor');
@@ -547,12 +593,26 @@ function openNote(id) {
 function leaveEditor() {
   const u = state.userNotes.find((x) => x.id === state.selectedNote);
   if (!u) return;
+  if (u.ink) {
+    inkInput.blur();
+    if (!normalizeName(u.cased || '')) {
+      state.userNotes = state.userNotes.filter((x) => x !== u);
+      state.selectedNote = state.showPrediction ? 'prediction' : '';
+    } else {
+      u.done = true;
+      setName(u.cased, true);
+    }
+    saveState();
+    renderNotes();
+    renderFolders();
+    return;
+  }
   const edit = $('#noteEdit');
   if (edit) u.text = editText(edit);
   if (!u.text.trim()) {
     state.userNotes = state.userNotes.filter((x) => x !== u);
     state.selectedNote = 'prediction';
-  } else if (state.capNote) {
+  } else if (state.newNoteMode === 'capture') {
     const first = u.text.split('\n').find((l) => l.trim()) || '';
     if (normalizeName(first)) setName(first);
   }
@@ -566,14 +626,58 @@ function editText(el) {
 }
 
 function newNote() {
-  const u = { id: 'u' + Date.now(), text: '', at: Date.now() };
+  const ink = state.newNoteMode === 'ink';
+  // iOS viser kun tastaturet, hvis fokus sker direkte i trykket
+  if (ink) { inkInput.value = ''; inkInput.focus(); }
+  const u = ink ? { id: 'u' + Date.now(), ink: true, raw: '', cased: '', at: Date.now() } : { id: 'u' + Date.now(), text: '', at: Date.now() };
   state.userNotes.push(u);
   state.selectedNote = u.id;
+  flipped = true;
   saveState();
   renderNotes();
   renderNotePage();
   setView('editor');
-  setTimeout(() => $('#noteEdit')?.focus(), 380);
+  if (!ink) $('#noteEdit')?.focus();
+}
+
+/* Håndskrift-note: du taster navnet, det tegnes bogstav for bogstav.
+   Hvert bogstav får sit store/lille bogstav, når det skrives, og ændres ikke bagefter. */
+const inkInput = document.querySelector('#inkInput');
+let inkAnim = null;
+
+function onInkInput() {
+  const u = state.userNotes.find((x) => x.id === state.selectedNote && x.ink && !x.done);
+  if (!u) return;
+  const raw = inkInput.value.slice(0, 28);
+  const prev = u.cased || '';
+  const clean = normalizeName(raw.replace(/\s+$/, '')) + (/\s$/.test(raw) && raw.trim() ? ' ' : '');
+  let cased = '';
+  if (state.caseMode === 'best' && isFontReady()) {
+    const o = planOptions();
+    const best = bestCase(clean.trimEnd(), o);
+    // behold de bogstaver, der allerede er skrevet
+    cased = [...best].map((c, i) => (i < prev.length && prev[i].toLowerCase() === c.toLowerCase() ? prev[i] : c)).join('');
+  } else {
+    cased = planName(clean, { ...planOptions() }).name;
+  }
+  if (/\s$/.test(clean)) cased += ' ';
+  u.raw = raw;
+  u.cased = cased;
+  saveState();
+  const grew = cased.trimEnd().length > prev.trimEnd().length;
+  clearTimeout(inkAnim);
+  if (grew) {
+    const start = Date.now();
+    const step = () => {
+      const p = (Date.now() - start) / 320;
+      drawPrediction(p < 1 ? { index: 0, p } : null);
+      if (p < 1) inkAnim = setTimeout(step, 16);
+    };
+    step();
+  } else {
+    drawPrediction();
+  }
+  navTitleEditor.textContent = '';
 }
 
 /* ---------------- kollapsende store titler ---------------- */
@@ -611,7 +715,7 @@ document.querySelectorAll('[data-scroll]').forEach((scroller) => {
 
 const fields = {
   sourceSelect: 'source', nameInput: 'name', caseSelect: 'caseMode', numberInput: 'number',
-  capSearch: 'capSearch', capNote: 'capNote', noteTitle: 'noteTitle', noteText: 'noteText',
+  capSearch: 'capSearch', newNoteMode: 'newNoteMode', inkLie: 'inkLie', showPrediction: 'showPrediction', noteTitle: 'noteTitle', noteText: 'noteText',
   noteWhen: 'noteWhen', inkColor: 'inkColor', inkSize: 'inkSize', startSide: 'startSide',
   flipCorner: 'flipCorner', flipStyle: 'flipStyle', tellDot: 'tellDot', letterRot: 'letterRot',
   preferDigits: 'preferDigits', roomInput: 'room',
@@ -731,6 +835,7 @@ function onPanelChange(e) {
   }
   if (state[key] === value) return;
   state[key] = value;
+  if (key === 'name' || key === 'caseMode') state.nameExact = false;
   saveState();
   if (key === 'startSide') flipped = value === 'name';
   if (['source', 'name', 'caseMode', 'number', 'letterRot', 'preferDigits'].includes(key)) publishForce();
@@ -854,6 +959,16 @@ function registerEvents() {
       if (app.dataset.view === 'editor') leaveEditor();
       newNote();
     });
+  });
+
+  inkInput.addEventListener('input', onInkInput);
+  inkInput.addEventListener('focus', () => setTimeout(() => drawPrediction(), 350));
+  inkInput.addEventListener('blur', () => setTimeout(() => { if (selectedNote()?.ink) drawPrediction(); }, 350));
+  inkInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); inkInput.blur(); } });
+  // tryk på tegningen mens den skrives: fortsæt med at skrive
+  notePage.addEventListener('click', () => {
+    const u = state.userNotes.find((x) => x.id === state.selectedNote && x.ink && !x.done);
+    if (u) { inkInput.value = u.raw || ''; inkInput.focus(); }
   });
 
   notePage.addEventListener('input', (e) => {

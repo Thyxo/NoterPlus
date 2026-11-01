@@ -8,11 +8,25 @@ Den viser en "håndskrevet" note. Holdt normalt står der et tal. Vendes telefon
 
 ---
 
-## Rutinen
+## Rutine 1: Du "håndskriver" navnet (standard)
+
+1. Tilskueren siger et navn, fx *Mads*.
+2. Tryk på **ny note** (blyanten nederst til højre). Tastaturet kommer frem.
+3. Tast navnet. Det tegnes bogstav for bogstav som håndskrift, **liggende** på langs af skærmen. Vis det: "Her er dit navn."
+4. Tryk **tilbage**. Navnet bliver til et tal, fx `59841`, og sendes til lommeregneren.
+5. Lommeregneren: tilskueren regner frit, og resultatet bliver **59.841**.
+6. Åbn noten igen (navnet står op), og vend telefonen 180°. Nu står der **59841**.
+
+- **Liggende:** læses med telefonen drejet, så toppen peger mod venstre. Det kan ændres under *Vending → Skrevet* (toppen mod højre eller opret).
+- **Bogstaverne bliver ikke ændret:** hvert bogstav får sin form (stort eller lille), når du taster det, og den ændres ikke bagefter. Har du først trykket tilbage, kan noten ikke redigeres ved et uheld.
+- **Den hurtige plet** vender også denne note. Prikken viser, når tallet står op.
+- **Lås skærmrotation** på iPhonen (Kontrolcenter), ellers drejer hele appen med.
+
+## Rutine 2: Forudsigelse skrevet "i går"
 
 1. **Navnet.** Tilskueren tænker på et navn, fx *Mads*. Du får det på en af tre måder:
    - **Søgefeltet:** "Skriv lige navnet i søgefeltet." Det fanges ved Søg og forsvinder.
-   - **Ny note:** "Skriv navnet i en ny note." Første linje fanges, når de går tilbage.
+   - **Ny note:** med *Ny note → Tilskueren skriver* skriver de navnet i en almindelig note. Første linje fanges, når de går tilbage.
    - **Panelet:** du skriver det selv.
 2. **Tallet.** Noter+ regner navnet om til et tal, fx `50041`. Tallet sendes til lommeregneren, som slår force til.
 3. **Lommeregneren.** Tilskueren regner frit, fx fødselsdato + postnummer. Resultatet bliver **50.041**.
@@ -53,14 +67,15 @@ Uden fonten virker kun bogstaverne **O I L Z E h S g B G t b**, fx *LISE* = 3517
 | **Noten viser** | *Navn → tal*, *Fast tal* (fx en dato) eller *Lommeregnerens resultat* |
 | **Bogstaver** | **Bedste (blandet)** er standard. Hvert bogstav skrives stort eller lille, alt efter hvad der ligner et tal bedst, og 0 undgås som første ciffer. Der er også *Stort forbogstav*, *STORE*, *Som skrevet* og *små* |
 | **Forhåndsvisning** | Det lommeregneren viser, tegningen begge veje og advarsler (svage bogstaver, 0 forrest, for mange cifre) |
-| **Tilskueren skriver selv** | Fang navnet fra søgefeltet og/eller en ny note. *Slet tilskuernes noter* rydder op |
-| **Noten** | Titel, tekst over, hvornår den er "skrevet" (i går aftes, 3 dage siden, i morges), blækfarve og størrelse |
+| **Navnet** | Fang navnet fra søgefeltet. **Ny note:** *Du taster navnet → håndskrift* (rutine 1), *Tilskueren skriver* (1. linje fanges) eller *Almindelig note*. *Slet tilskuernes noter* rydder op |
+| **Forudsigelses-noten** | Vis den i listen eller ej (skjul den til rutine 1), titel, tekst over, hvornår den er "skrevet" (i går aftes, 3 dage siden, i morges), blækfarve og størrelse |
 | **Vending** | Se nedenfor |
 | **Cryptext-font** | Vælg fil, *Bogstav-tegn* (auto/vendt/opret), *Tal-tegn for O I Z E S L B G*, kalibrér igen, fjern. **Tabellen** viser hvert bogstav, som det står i tal-vejen, og tallet det ligner. Ret et tal ved at skrive i feltet (orange = svagt, gul = rettet af dig) |
 | **Forbindelse** | Kode, status og sidste resultat fra lommeregneren |
 | **Hjemmeskærm** | Perform-tilstand med falsk hjemmeskærm (fra notes-app). Tryk på Noter-ikonet: noten åbner direkte på forudsigelsen |
 
 ### Vending: den hurtige plet
+- **Skrevet:** *liggende – toppen mod venstre* (standard), *liggende – toppen mod højre* eller *opret*. Gælder alle håndskrift-noter.
 - **Hurtig plet:** et usynligt felt på 66×66 pt i et hjørne af noten (standard: øverst til højre under bjælken). Ét kort tryk vender tegningen 180°.
 - **Tryk på pletten:** *Vend med det samme* (gør det, mens skærmen vender væk) eller *Drej langsomt*: tegningen drejer synligt rundt, og tallet bliver til navnet foran tilskueren.
 - **Prik når tallet står op:** en næsten usynlig grå prik i pletten. Er prikken der, står tallet rigtigt for dig. Er den væk, står navnet op.

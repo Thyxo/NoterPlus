@@ -98,7 +98,7 @@ export function planName(name, o = {}) {
 }
 
 // Vælg stort eller lille bogstav for hvert tegn ud fra hvilket der ligner et tal bedst
-function bestCase(text, { font, map, preferDigits, scores }) {
+export function bestCase(text, { font = false, map = {}, preferDigits = false, scores = {} } = {}) {
   const rate = (c) => {
     const classic = DIGIT_FOR[c];
     if (classic && (!font || preferDigits)) return classic[1] === 'strong' ? 1 : 0.5;

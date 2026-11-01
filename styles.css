@@ -1128,3 +1128,24 @@ canvas.ink.spin { transition: transform 1.6s cubic-bezier(0.45, 0, 0.2, 1); }
 .gcell.manual input { color: var(--accent); }
 .gcell.weak input { color: #ff9f0a; }
 [hidden] { display: none !important; }
+
+/* Håndskrift-note og liggende tegning */
+.ink-wrap.lie { align-items: center; padding: 8px 0; }
+.ink-note { min-height: calc(var(--app-h, 100vh) - 220px); display: flex; flex-direction: column; justify-content: center; }
+.ink-note .ink-wrap { padding: 0; }
+.ink-input {
+  position: fixed;
+  left: 0;
+  top: 35%;
+  width: 2px;
+  height: 2px;
+  opacity: 0;
+  font-size: 16px; /* under 16px zoomer iOS ind */
+  border: 0;
+  padding: 0;
+  caret-color: transparent;
+  color: transparent;
+  background: transparent;
+  pointer-events: none;
+}
+.ink-note.typing { justify-content: flex-start; min-height: 0; padding-top: 12px; }
