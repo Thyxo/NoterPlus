@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="da">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content"
+    />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f2f2f7" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#000000" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Noter" />
+    <meta name="format-detection" content="telephone=no,date=no,address=no,email=no" />
+    <title>Noter</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app no-anim" id="app" data-view="notes">
+      <!-- ============ MAPPER ============ -->
+      <section class="screen s-folders" id="screenFolders">
+        <header class="nav" data-secret>
+          <div class="nav-heading"><span>Mapper</span></div>
+          <div class="nav-side"></div>
+          <div class="nav-side right">
+            <button class="gbtn" type="button" aria-label="Mere">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="4.33" cy="12" r="2" fill="currentColor" stroke="none" />
+                <circle cx="12" cy="12" r="2" fill="currentColor" stroke="none" />
+                <circle cx="19.67" cy="12" r="2" fill="currentColor" stroke="none" />
+              </svg>
+            </button>
+          </div>
+        </header>
+
+        <div class="scroll" data-scroll="screenFolders">
+          <h1 class="large-title">Mapper</h1>
+          <div id="folderGroups"></div>
+        </div>
+
+        <div class="bar">
+          <label class="searchbar">
+            <svg class="icon sm" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="10.6" cy="10.6" r="6.4" />
+              <path d="m15.3 15.3 4.8 4.8" />
+            </svg>
+            <input type="text" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="words"
+                   spellcheck="false" enterkeyhint="search" placeholder="Søg" aria-label="Søg" data-secret-search />
+            <svg class="icon sm" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="9" y="2.8" width="6" height="11.4" rx="3" />
+              <path d="M18 11.6a6 6 0 0 1-12 0" />
+              <path d="M12 17.6v3.4" />
+            </svg>
+          </label>
+          <button class="compose" type="button" aria-label="Ny mappe">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3.4 7.6a2 2 0 0 1 2-2h3.1l2 2.2h8.1a2 2 0 0 1 2 2v8.6a2 2 0 0 1-2 2H5.4a2 2 0 0 1-2-2z" />
+              <path d="M12 11.4v5.2" />
+              <path d="M9.4 14h5.2" />
+            </svg>
+          </button>
+        </div>
+      </section>
+
+      <!-- ============ NOTELISTE ============ -->
+      <section class="screen s-notes" id="screenNotes">
+        <header class="nav" data-secret>
+          <div class="nav-heading"><span id="navTitleNotes">Noter</span></div>
+          <div class="nav-side">
+            <button class="gbtn back" type="button" id="toFolders" aria-label="Mapper">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M15.2 4.6 7.8 12l7.4 7.4" />
+              </svg>
+            </button>
+          </div>
+          <div class="nav-side right">
+            <button class="gbtn" type="button" aria-label="Mere">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="4.33" cy="12" r="2" fill="currentColor" stroke="none" />
+                <circle cx="12" cy="12" r="2" fill="currentColor" stroke="none" />
+                <circle cx="19.67" cy="12" r="2" fill="currentColor" stroke="none" />
+              </svg>
+            </button>
+          </div>
+        </header>
+
+        <div class="scroll" data-scroll="screenNotes">
+          <h1 class="large-title" id="folderTitle">Noter</h1>
+          <div class="icloud">
+            <svg class="icon cloud" viewBox="0 0 30 21" aria-hidden="true">
+              <path d="M8.2 19.6h14.6a5.4 5.4 0 0 0 .7-10.75A7.6 7.6 0 0 0 9.2 6.9a6.4 6.4 0 0 0-1 12.7z" />
+              <path d="M15.6 7.2v5.6" />
+              <circle cx="15.6" cy="15.9" r="1.05" fill="currentColor" stroke="none" />
+            </svg>
+            <span>iCloud-lagringsplads næsten fyldt · <b class="link">Få mere</b></span>
+          </div>
+          <div id="noteGroups"></div>
+        </div>
+
+        <div class="bar">
+          <label class="searchbar">
+            <svg class="icon sm" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="10.6" cy="10.6" r="6.4" />
+              <path d="m15.3 15.3 4.8 4.8" />
+            </svg>
+            <input id="noteSearch" type="text" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="words"
+                   spellcheck="false" enterkeyhint="search" placeholder="Søg" aria-label="Søg i noter" data-secret-search />
+            <svg class="icon sm" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="9" y="2.8" width="6" height="11.4" rx="3" />
+              <path d="M18 11.6a6 6 0 0 1-12 0" />
+              <path d="M12 17.6v3.4" />
+            </svg>
+          </label>
+          <button class="compose" type="button" id="newNoteButton" aria-label="Ny note">
+            <i class="ti ti-compose" aria-hidden="true"></i>
+          </button>
+        </div>
+      </section>
+
+      <!-- ============ NOTE ============ -->
+      <section class="screen s-editor" id="screenEditor">
+        <header class="nav" data-secret>
+          <div class="nav-heading"><span id="navTitleEditor"></span></div>
+          <div class="nav-side">
+            <button class="gbtn back" type="button" id="toNotes" aria-label="Tilbage">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M15.2 4.6 7.8 12l7.4 7.4" />
+              </svg>
+            </button>
+          </div>
+          <div class="nav-side right">
+            <div class="gpill">
+              <button type="button" aria-label="Del">
+                <svg class="icon share" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 14.6V2" />
+                  <path d="M7.9 5.9 12 1.8l4.1 4.1" />
+                  <path d="M8.3 8.9H6.4a2.2 2.2 0 0 0-2.2 2.2v8.95a2.2 2.2 0 0 0 2.2 2.2h11.2a2.2 2.2 0 0 0 2.2-2.2v-8.95a2.2 2.2 0 0 0-2.2-2.2h-1.9" />
+                </svg>
+              </button>
+              <button type="button" aria-label="Mere">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="4.33" cy="12" r="2" fill="currentColor" stroke="none" />
+                  <circle cx="12" cy="12" r="2" fill="currentColor" stroke="none" />
+                  <circle cx="19.67" cy="12" r="2" fill="currentColor" stroke="none" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <div class="scroll" data-scroll="screenEditor" id="notePage"></div>
+        <!-- usynlig plet: vender tegningen 180° (hjørnet vælges i panelet) -->
+        <div class="flip-spot" id="flipSpot" aria-hidden="true"><i class="tell" id="flipTell"></i></div>
+
+        <div class="bar">
+          <div class="tools">
+            <button type="button" aria-label="Tjekliste">
+              <i class="ti ti-checklist" aria-hidden="true"></i>
+            </button>
+            <button type="button" aria-label="Vedhæft billede" id="attachButton">
+              <i class="ti ti-clip" aria-hidden="true"></i>
+            </button>
+            <button type="button" aria-label="Markering">
+              <i class="ti ti-markup" aria-hidden="true"></i>
+            </button>
+            <button type="button" aria-label="Skriveværktøjer">
+              <i class="ti ti-writing" aria-hidden="true"></i>
+            </button>
+          </div>
+          <button class="compose" type="button" aria-label="Ny note" data-new-note>
+            <i class="ti ti-compose" aria-hidden="true"></i>
+          </button>
+        </div>
+      </section>
+
+    </div>
+
+    <input type="file" id="imagePicker" accept="image/*" hidden />
+
+    <!-- ============ PERFORMER ============ -->
+    <div class="scrim" id="scrim" aria-hidden="true"></div>
+
+    <section class="sheet" id="settingsSheet" aria-hidden="true" aria-label="Performer-indstillinger">
+      <div class="grabber"></div>
+      <h2 class="sheet-title">Performer</h2>
+      <p class="status-line" id="statusLine"></p>
+
+      <p class="field-note">Forudsigelse</p>
+      <div class="field-card">
+        <label class="field">
+          <span>Noten viser</span>
+          <select id="sourceSelect">
+            <option value="name">Navn → tal (Cryptext)</option>
+            <option value="number">Fast tal</option>
+            <option value="calc">Lommeregnerens resultat</option>
+          </select>
+        </label>
+        <label class="field" data-show="name">
+          <span>Navn</span>
+          <input id="nameInput" type="text" autocomplete="off" autocorrect="off" autocapitalize="words"
+                 spellcheck="false" enterkeyhint="done" placeholder="fx Lise" />
+        </label>
+        <label class="field" data-show="name">
+          <span>Bogstaver</span>
+          <select id="caseSelect">
+            <option value="best">Bedste (blandet)</option>
+            <option value="title">Stort forbogstav</option>
+            <option value="upper">STORE</option>
+            <option value="asTyped">Som skrevet</option>
+            <option value="lower">små</option>
+          </select>
+        </label>
+        <label class="field" data-show="number">
+          <span>Tal</span>
+          <input id="numberInput" type="text" inputmode="numeric" autocomplete="off" placeholder="fx 3517" />
+        </label>
+      </div>
+      <div class="preview-card">
+        <div class="pv-row"><span>Lommeregneren viser</span><b id="pvDigits">–</b></div>
+        <div class="pv-ink">
+          <figure><canvas id="pvNumber"></canvas><figcaption>Tal-vejen</figcaption></figure>
+          <figure><canvas id="pvName" class="flipped"></canvas><figcaption>Vendt</figcaption></figure>
+        </div>
+        <p class="pv-warn" id="pvWarn"></p>
+      </div>
+
+      <p class="field-note">Tilskueren skriver selv navnet</p>
+      <div class="field-card">
+        <label class="field">
+          <span>I søgefeltet</span>
+          <input type="checkbox" class="switch" id="capSearch" />
+        </label>
+        <label class="field">
+          <span>I en ny note (1. linje)</span>
+          <input type="checkbox" class="switch" id="capNote" />
+        </label>
+        <button class="field link" id="clearUserNotes" type="button"><span>Slet tilskuernes noter</span></button>
+      </div>
+
+      <p class="field-note">Noten</p>
+      <div class="field-card">
+        <label class="field">
+          <span>Titel</span>
+          <input id="noteTitle" type="text" autocomplete="off" autocapitalize="sentences" />
+        </label>
+        <label class="field">
+          <span>Tekst over</span>
+          <input id="noteText" type="text" autocomplete="off" autocapitalize="sentences" placeholder="(ingen)" />
+        </label>
+        <label class="field">
+          <span>Skrevet</span>
+          <select id="noteWhen">
+            <option value="yesterday">I går aftes</option>
+            <option value="days">For 3 dage siden</option>
+            <option value="today">I morges</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Blæk</span>
+          <select id="inkColor">
+            <option value="auto">Hvid / sort</option>
+            <option value="#ffd60a">Gul</option>
+            <option value="#0a84ff">Blå</option>
+            <option value="#ff453a">Rød</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Størrelse</span>
+          <select id="inkSize">
+            <option value="72">Lille</option>
+            <option value="96">Mellem</option>
+            <option value="124">Stor</option>
+          </select>
+        </label>
+      </div>
+
+      <p class="field-note">Vending</p>
+      <div class="field-card">
+        <label class="field">
+          <span>Når noten åbnes</span>
+          <select id="startSide">
+            <option value="number">Tallet op</option>
+            <option value="name">Navnet op</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Hurtig plet</span>
+          <select id="flipCorner">
+            <option value="tr">Øverst til højre</option>
+            <option value="tl">Øverst til venstre</option>
+            <option value="br">Nederst til højre</option>
+            <option value="bl">Nederst til venstre</option>
+            <option value="off">Fra</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Tryk på pletten</span>
+          <select id="flipStyle">
+            <option value="instant">Vend med det samme</option>
+            <option value="spin">Drej langsomt (synligt)</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Prik når tallet står op</span>
+          <input type="checkbox" class="switch" id="tellDot" />
+        </label>
+      </div>
+
+      <p class="field-note">Cryptext-font</p>
+      <div class="field-card">
+        <div class="field"><span class="grow" id="fontStatus">Ingen font</span></div>
+        <button class="field link" id="fontPick" type="button"><span>Vælg font-fil …</span><i class="chev" aria-hidden="true"></i></button>
+        <label class="field" data-font>
+          <span>Bogstav-tegn</span>
+          <select id="letterRot">
+            <option value="auto">Auto</option>
+            <option value="rotated">Vendt i tal-vejen</option>
+            <option value="upright">Opret i tal-vejen</option>
+          </select>
+        </label>
+        <label class="field" data-font>
+          <span>Tal-tegn for O I Z E S L B G</span>
+          <input type="checkbox" class="switch" id="preferDigits" />
+        </label>
+        <button class="field link" id="recalibrate" type="button" data-font><span>Kalibrér igen</span></button>
+        <button class="field link danger" id="fontRemove" type="button" data-font><span>Fjern font fra telefonen</span></button>
+      </div>
+      <p class="field-hint" data-font>Tabellen: hvert bogstav, som det står i tal-vejen, og tallet det ligner. Ret et tal, hvis det ikke passer.</p>
+      <div class="glyph-grid" id="glyphGrid" data-font></div>
+
+      <p class="field-note">Forbindelse til lommeregneren</p>
+      <div class="field-card">
+        <label class="field">
+          <span>Kode</span>
+          <input id="roomInput" type="text" autocomplete="off" autocorrect="off" autocapitalize="off"
+                 spellcheck="false" placeholder="samme kode i begge apps" />
+        </label>
+        <button class="field link" id="roomNew" type="button"><span>Lav en ny kode</span></button>
+        <div class="field"><span>Status</span><b class="grow right" id="linkStatus">–</b></div>
+        <div class="field"><span>Sidste resultat</span><b class="grow right" id="lastResult">–</b></div>
+      </div>
+
+      <p class="field-note">Hjemmeskærm (perform)</p>
+      <div class="field-card">
+        <label class="field">
+          <span>Hjemmeskærm</span>
+          <select id="homeModeSelect">
+            <option value="default">Standard</option>
+            <option value="custom">Egen</option>
+          </select>
+        </label>
+        <button class="field link" id="openHomeSetup" type="button">
+          <span>Opsæt egen hjemmeskærm</span>
+          <i class="chev" aria-hidden="true"></i>
+        </button>
+      </div>
+
+      <p class="field-note diag" id="viewportDiag"></p>
+
+      <button class="primary" id="saveSettings" type="button">OK</button>
+      <button class="secondary" id="performButton" type="button">Perform</button>
+      <input type="file" id="fontFile" accept=".ttf,.otf,.woff,.woff2" hidden />
+    </section>
+    <script src="fakehome.js"></script>
+    <script type="module" src="src/app.js"></script>
+  </body>
+</html>

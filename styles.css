@@ -1,0 +1,1130 @@
+/* =========================================================
+   Noter — Apple Notes klon (iOS 26 / "Liquid Glass")
+   Mål-metrics er aflæst pixel for pixel fra rigtige iPhone-skærmbilleder
+   (iOS 26): 16px side-margin på kort (radius 26), 28,33px på den flydende
+   bundlinje (47,33px høj), 44px nav-knapper, 34px stor titel, 20px
+   semibold sektionsoverskrift, 17px rækketitel, rækker 64,33px.
+   Ingen negativ letter-spacing: Safari anvender selv SF Pros tracking.
+   ========================================================= */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:root {
+  color-scheme: light dark;
+
+  --pad: 16px;          /* side-margin for kort og titler */
+  --bar-pad: 28.33px;   /* side-margin for den flydende bundlinje */
+  --radius: 26px;
+  --nav-h: 44px;
+  --btn: 44px;
+  --bar-h: 47.33px;
+
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+    "Helvetica Neue", "Segoe UI", system-ui, sans-serif;
+
+  --ease: cubic-bezier(0.32, 0.72, 0, 1);
+  --dur: 0.46s;
+
+  /* lys */
+  --bg: #f2f2f7;
+  --card: #ffffff;
+  --label: #000000;
+  --label2: rgba(60, 60, 67, 0.6);
+  --label3: rgba(60, 60, 67, 0.42);
+  --sep: rgba(60, 60, 67, 0.18);
+  --accent: #d29b00;
+  --yellow: #ffcc00;
+  --row-active: rgba(0, 0, 0, 0.055);
+  --glass: rgba(255, 255, 255, 0.6);
+  --glass-hi: rgba(255, 255, 255, 0.95);
+  --glass-line: rgba(255, 255, 255, 0.7);
+  --glass-shadow: 0 8px 26px rgba(0, 0, 0, 0.13), 0 1px 3px rgba(0, 0, 0, 0.08);
+  --nav-bg: rgba(242, 242, 247, 0.72);
+  --sheet: rgba(242, 242, 247, 0.86);
+  --dim: 0.16;
+  --glass-icon: #000000;
+  --placeholder: rgba(60, 60, 67, 0.6);
+  --edge: 242, 242, 247;
+  --note-text: #000000;
+  --sbar: rgba(0, 0, 0, 0.35);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #000000;
+    --card: #1c1c1e;
+    --label: #ffffff;
+    --label2: rgba(235, 235, 245, 0.6);
+    --label3: rgba(235, 235, 245, 0.42);
+    --sep: rgba(255, 255, 255, 0.11);
+    --accent: #dcb13d;
+    --yellow: #dcb13d;
+    --row-active: rgba(255, 255, 255, 0.07);
+    --glass: rgba(32, 32, 32, 0.75);
+    --glass-hi: rgba(255, 255, 255, 0.04);
+    --glass-line: rgba(255, 255, 255, 0.15);
+    --glass-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+    --glass-icon: #f5f5f5;
+    --placeholder: #a3a3a3;
+    --edge: 0, 0, 0;
+    --note-text: #dcdcdc;
+    --sbar: rgba(255, 255, 255, 0.38);
+    --glass-blur: 1.5px;
+    --nav-bg: rgba(0, 0, 0, 0.6);
+    --sheet: rgba(28, 28, 30, 0.82);
+    --dim: 0.42;
+  }
+}
+
+html,
+body {
+  height: var(--app-h, 100%);
+  margin: 0;
+  overflow: hidden;
+  background: var(--bg);
+  overscroll-behavior: none;
+}
+
+body {
+  font-family: var(--font);
+  color: var(--label);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+input,
+select,
+textarea {
+  font-family: inherit;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.icon {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.85;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex: none;
+}
+.icon.sm { width: 20px; height: 20px; stroke-width: 1.9; }
+.icon.xs { width: 15px; height: 15px; stroke-width: 1.8; }
+
+/* ---------------- glas ---------------- */
+
+.gbtn,
+.gpill,
+.searchbar,
+.tools,
+.compose {
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(var(--glass-blur, 24px)) saturate(180%);
+  backdrop-filter: blur(var(--glass-blur, 24px)) saturate(180%);
+  border: 1px solid var(--glass-line);
+  box-shadow: var(--glass-shadow), inset 0 0.5px 0 var(--glass-hi);
+}
+
+/* ---------------- skærme ---------------- */
+
+/* Højden sættes fra JS (--app-h): iOS 26-hjemmeskærm-apps kan give et
+   layout-vindue, der stopper ~60pt over skærmens bund. */
+.app {
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: var(--app-h, 100%);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  transition: transform var(--dur) var(--ease);
+  will-change: transform;
+}
+
+.screen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 30;
+  transition: opacity var(--dur) var(--ease);
+}
+
+.s-folders { z-index: 1; }
+.s-notes { z-index: 2; }
+.s-editor { z-index: 3; }
+
+.s-notes,
+.s-editor {
+  box-shadow: -0.5px 0 0 var(--sep), -22px 0 44px rgba(0, 0, 0, 0.32);
+}
+
+.app[data-view="folders"] .s-notes,
+.app[data-view="folders"] .s-editor,
+.app[data-view="notes"] .s-editor {
+  transform: translate3d(100%, 0, 0);
+}
+
+.app[data-view="notes"] .s-folders,
+.app[data-view="editor"] .s-folders,
+.app[data-view="editor"] .s-notes {
+  transform: translate3d(-26%, 0, 0);
+}
+
+.app[data-view="notes"] .s-folders::after,
+.app[data-view="editor"] .s-folders::after,
+.app[data-view="editor"] .s-notes::after {
+  opacity: var(--dim);
+}
+
+.no-anim .screen,
+.no-anim .screen::after {
+  transition: none;
+}
+
+/* ---------------- navigationslinje ---------------- */
+
+.nav {
+  position: relative;
+  z-index: 10;
+  flex: none;
+  display: flex;
+  align-items: center;
+  height: calc(env(safe-area-inset-top) + var(--nav-h));
+  padding: env(safe-area-inset-top) var(--pad) 0;
+}
+
+.nav::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--nav-bg);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  backdrop-filter: blur(22px) saturate(180%);
+  border-bottom: 0.5px solid transparent;
+  opacity: 0;
+  transition: opacity 0.24s ease;
+  pointer-events: none;
+}
+
+.screen.scrolled .nav::before {
+  opacity: 1;
+  border-bottom-color: var(--sep);
+}
+
+.nav-side {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.nav-side.right { margin-left: auto; }
+
+.nav-heading {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: env(safe-area-inset-top);
+  height: var(--nav-h);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 76px;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(7px);
+  transition: opacity 0.22s ease, transform 0.22s var(--ease);
+}
+
+.nav-heading span {
+  font-size: 17px;
+  font-weight: 600;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.screen.scrolled .nav-heading {
+  opacity: 1;
+  transform: none;
+}
+
+.gbtn {
+  width: var(--btn);
+  height: var(--btn);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  transition: transform 0.18s var(--ease), opacity 0.18s;
+}
+.gbtn:active { transform: scale(0.88); opacity: 0.75; }
+.gbtn .icon { width: 24px; height: 24px; color: var(--glass-icon); }
+/* chevron: 11×18,7pt glyf, ~2,3pt streg */
+.gbtn.back .icon { width: 26.6px; height: 26.6px; stroke-width: 2.07; margin-left: -3px; }
+
+.gpill {
+  display: flex;
+  align-items: center;
+  height: var(--btn);
+  border-radius: calc(var(--btn) / 2);
+  overflow: hidden;
+}
+.gpill { width: 100.67px; justify-content: space-between; }
+.gpill .icon { width: 24px; height: 24px; color: var(--glass-icon); }
+/* del-ikon: 18,7×24pt glyf */
+.gpill .icon.share { width: 26px; height: 26px; stroke-width: 1.75; margin-left: -3px; }
+.gpill button {
+  width: 47px;
+  height: calc(var(--btn) - 2px);
+  display: grid;
+  place-items: center;
+  transition: background 0.15s;
+}
+.gpill button:active { background: rgba(128, 128, 128, 0.22); }
+
+/* ---------------- rullende indhold ---------------- */
+
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  padding-bottom: 116px;
+  scrollbar-width: none;
+}
+.scroll::-webkit-scrollbar { display: none; }
+
+/* Egen scroll-indikator: fast iOS-længde (~51pt) i stedet for den lange,
+   der afslører, at listen kun har få noter. Vises kun mens man scroller. */
+.sbar {
+  position: absolute;
+  right: 3px;
+  top: 0;
+  z-index: 11;
+  width: 3px;
+  height: 51px;
+  border-radius: 1.5px;
+  background: var(--sbar);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
+}
+.sbar.on { opacity: 1; transition: opacity 0.08s ease; }
+
+.large-title {
+  margin: 0;
+  padding: 21.67px var(--pad) 0;
+  font-size: 34px;
+  line-height: 41px;
+  font-weight: 700;
+}
+
+.icloud {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: -2.2px;
+  padding: 0 var(--pad);
+  font-size: 15px;
+  line-height: 20px;
+  color: var(--label2);
+}
+.icloud .link { color: var(--accent); font-weight: 400; }
+.icloud .cloud { width: 20.3px; height: 14.2px; stroke-width: 1.75; margin-left: -0.5px; }
+
+/* ---------------- sektioner + kort ---------------- */
+
+.sec {
+  margin-top: 29.37px;
+}
+.sec:first-child {
+  margin-top: 17.6px;
+}
+
+.sec-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 28.67px 0 var(--pad);
+  margin: 0 0 10.3px;
+  font-size: 20px;
+  line-height: 24px;
+  font-weight: 600;
+}
+.sec-head .chev {
+  color: var(--accent);
+  transition: transform 0.28s var(--ease);
+}
+.sec.collapsed .sec-head .chev { transform: rotate(-90deg); }
+.sec.collapsed .card { display: none; }
+
+.card {
+  margin: 0 var(--pad);
+  background: var(--card);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.row {
+  position: relative;
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10.33px 16px 9.67px 28px;
+  transition: background 0.12s;
+}
+.row:active { background: var(--row-active); }
+
+.row + .row::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 28px;
+  right: 16px;
+  height: 1px;
+  background: var(--sep);
+}
+
+.row h3 {
+  margin: 0 0 2.33px;
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.row .meta {
+  display: flex;
+  gap: 8px;
+  font-size: 15px;
+  line-height: 20px;
+  color: var(--label2);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.row .meta .prev {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* mappe-rækker */
+.row.folder {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 16px 11px 22px;
+}
+.row.folder .fi { color: var(--yellow); width: 22px; height: 22px; }
+.row.folder .name {
+  flex: 1;
+  font-size: 17px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.row.folder .count {
+  font-size: 17px;
+  color: var(--label2);
+}
+.row.folder .go { color: var(--label3); width: 16px; height: 16px; stroke-width: 2.4; }
+.row.folder + .row.folder::before { left: 55px; }
+
+/* ---------------- flydende bundlinje ---------------- */
+
+.bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 12;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 0 var(--bar-pad) 28.67px;
+  pointer-events: none;
+  transform: translateY(calc(var(--kb, 0px) * -1));
+  transition: transform 0.24s var(--ease);
+}
+.bar > * { pointer-events: auto; }
+
+/* iOS 26 "scroll edge": indholdet under bundlinjen tones mørkt ud */
+.bar::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--kb, 0px) * -1);
+  height: calc(92px + var(--kb, 0px));
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    rgba(var(--edge), 0) 0%,
+    rgba(var(--edge), 0.22) 30%,
+    rgba(var(--edge), 0.85) 72%,
+    rgba(var(--edge), 0.88) 100%
+  );
+}
+
+.searchbar {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 7.9px;
+  height: var(--bar-h);
+  padding: 0 17px 0 15.9px;
+  border-radius: calc(var(--bar-h) / 2);
+  color: var(--glass-icon);
+}
+.searchbar .icon:first-child { width: 22px; height: 22px; stroke-width: 2.2; }
+.searchbar .icon:last-child { width: 24px; height: 24px; stroke-width: 1.9; }
+.searchbar input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  outline: none;
+  font-size: 17px;
+  color: var(--label);
+}
+.searchbar input::placeholder { color: var(--placeholder); opacity: 1; }
+
+.tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 221px;
+  height: var(--bar-h);
+  padding: 0;
+  border-radius: calc(var(--bar-h) / 2);
+  color: var(--glass-icon);
+}
+.tools .icon { width: 26px; height: 26px; stroke-width: 1.75; }
+.tools button {
+  width: 52px;
+  height: calc(var(--bar-h) - 2px);
+  display: grid;
+  place-items: center;
+  border-radius: 22px;
+  transition: background 0.15s;
+}
+.tools button:active { background: rgba(128, 128, 128, 0.22); }
+
+.compose {
+  flex: none;
+  width: var(--bar-h);
+  height: var(--bar-h);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  transition: transform 0.18s var(--ease);
+}
+.compose:active { transform: scale(0.9); }
+.tools + .compose { margin-left: auto; }
+.compose .icon { width: 30px; height: 30px; stroke-width: 1.6; color: var(--glass-icon); }
+
+/* ---------------- note ---------------- */
+
+/* Note-siden er målt mod den rigtige app: 28pt titel, 18pt brødtekst med
+   26,1pt linjeafstand i #DCDCDC, tal højrestillet til 59,7pt, tekst ved 71pt. */
+.note-body {
+  position: relative;
+  padding: 19.2px 26.2px 0;
+  color: var(--note-text);
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Tidsstemplet ligger over scroll-origo, præcis som i den rigtige app:
+   usynligt indtil man trækker noten ned (rubber-band). */
+.stamp {
+  position: absolute;
+  top: -26px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--label2);
+}
+
+.note-title {
+  margin: 0 0 8px;
+  font-size: 28px;
+  line-height: 1.16;
+  font-weight: 700;
+}
+
+.note-body p {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.45;
+}
+.note-body p.gap { height: 12px; }
+
+.note-body .lead {
+  font-size: 20px;
+  font-weight: 600;
+  padding-top: 6px;
+}
+
+.note-ol {
+  margin: 0;
+  padding: 0 0 0 43.13px;
+  list-style: none;
+}
+.note-ol li {
+  position: relative;
+  font-size: 18px;
+  line-height: 26.11px;
+}
+.note-ol li .n {
+  position: absolute;
+  right: 100%;
+  margin-right: 9.06px;
+  white-space: nowrap;
+}
+
+.note-img {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  border-radius: 14px;
+  margin: 14px 0 4px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.24);
+}
+
+.note-page-fade {
+  animation: pagein 0.28s var(--ease);
+}
+@keyframes pagein {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ---------------- skjult langt-tryk-felt ---------------- */
+
+.hotspot {
+  position: absolute;
+  left: 0;
+  top: 46%;
+  width: 62px;
+  height: 96px;
+  z-index: 40;
+  background: transparent;
+}
+
+/* ---------------- performer-ark ---------------- */
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(0, 0, 0, 0.42);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.32s ease;
+}
+.scrim.on { opacity: 1; pointer-events: auto; }
+
+.sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 60;
+  max-height: 88vh;
+  overflow-y: auto;
+  padding: 6px 16px calc(22px + env(safe-area-inset-bottom));
+  border-radius: 24px 24px 0 0;
+  background: var(--sheet);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  backdrop-filter: blur(40px) saturate(180%);
+  border-top: 0.5px solid var(--glass-line);
+  transform: translateY(110%);
+  transition: transform var(--dur) var(--ease);
+}
+.sheet.open { transform: none; }
+
+.grabber {
+  width: 36px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--label3);
+  margin: 5px auto 10px;
+}
+
+.sheet-title {
+  margin: 0 4px 16px;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.field-card {
+  background: var(--card);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  font-size: 17px;
+}
+.field + .field::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 14px;
+  right: 0;
+  height: 0.5px;
+  background: var(--sep);
+}
+.field > span { flex: none; }
+
+.field select {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  outline: none;
+  font-size: 17px;
+  color: var(--accent);
+  text-align: right;
+  direction: rtl;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.field input[type="text"] {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  outline: none;
+  font: inherit;
+  font-size: 17px;
+  color: var(--accent);
+  text-align: right;
+}
+.field input[type="text"]::placeholder { color: var(--label3); }
+
+.suggest:empty { display: none; }
+.suggest {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 2px 14px 12px;
+}
+.suggest button {
+  padding: 7px 12px;
+  border-radius: 16px;
+  background: var(--fill, rgba(120, 120, 128, 0.24));
+  color: var(--label);
+  font-size: 15px;
+}
+.field-note.pred-status { margin-top: 6px; text-transform: none; letter-spacing: 0; }
+.field-note.pred-status.own { color: var(--accent); }
+
+.field.radio { cursor: pointer; }
+.field.radio > span { flex: 1; }
+.field.radio input { position: absolute; opacity: 0; pointer-events: none; }
+.field.radio .tick {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border-radius: 50%;
+  border: 1.6px solid var(--label3);
+  transition: all 0.16s;
+}
+.field.radio input:checked ~ .tick {
+  border-color: var(--accent);
+  background: var(--accent);
+  box-shadow: inset 0 0 0 3.5px var(--card);
+}
+
+.field-note {
+  margin: 14px 6px 6px;
+  font-size: 13px;
+  color: var(--label2);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.field-note b { color: var(--label); }
+
+.primary {
+  display: block;
+  width: 100%;
+  margin-top: 18px;
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--accent);
+  color: #000;
+  font-size: 17px;
+  font-weight: 600;
+}
+.primary:active { opacity: 0.75; }
+
+.secondary {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--card);
+  color: var(--accent);
+  font-size: 17px;
+  font-weight: 600;
+}
+.secondary:active { opacity: 0.75; }
+
+/* ---------------- skjult talpanel ---------------- */
+
+.pad {
+  position: fixed;
+  z-index: 70;
+  left: 50%;
+  bottom: calc(26px + env(safe-area-inset-bottom));
+  width: 244px;
+  margin-left: -122px;
+  padding: 12px;
+  border-radius: 26px;
+  background: var(--sheet);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  backdrop-filter: blur(40px) saturate(180%);
+  border: 0.5px solid var(--glass-line);
+  box-shadow: var(--glass-shadow);
+  opacity: 0;
+  transform: translateY(14px) scale(0.94);
+  pointer-events: none;
+  transition: opacity 0.26s ease, transform 0.26s var(--ease);
+}
+.pad.open { opacity: 1; transform: none; pointer-events: auto; }
+
+.pad-display {
+  text-align: center;
+  font-size: 30px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 1px;
+  padding: 2px 0 10px;
+}
+
+.pad-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.pad-grid button {
+  height: 48px;
+  border-radius: 14px;
+  background: var(--glass);
+  font-size: 20px;
+  font-weight: 500;
+  display: grid;
+  place-items: center;
+}
+.pad-grid button:active { background: var(--accent); color: #000; }
+.pad-grid button.wide { font-size: 15px; }
+
+/* ---------------- brede skærme (iPad / desktop) ---------------- */
+
+@media (min-width: 900px) {
+  .app {
+    display: grid;
+    grid-template-columns: 264px 344px 1fr;
+  }
+  .screen {
+    position: relative;
+    inset: auto;
+    transform: none !important;
+    box-shadow: none;
+    border-right: 0.5px solid var(--sep);
+    min-width: 0;
+  }
+  .s-editor { border-right: 0; }
+  .screen::after { display: none; }
+  .nav .back { display: none; }
+  .row.selected { background: var(--row-active); }
+  .hotspot { top: auto; bottom: 0; height: 64px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+.field-note.diag { font-size: 11px; opacity: 0.6; }
+
+/* Værktøjsikoner klippet ud af et rigtigt iOS 26-screenshot (@3x) og brugt
+   som masker, så de følger tekstfarven. Størrelser = pixels / 3. */
+.ti {
+  display: block;
+  flex: none;
+  background: var(--glass-icon);
+  -webkit-mask: var(--m) center / contain no-repeat;
+  mask: var(--m) center / contain no-repeat;
+}
+.ti-checklist { --m: url("icons/checklist.png"); width: 26.33px; height: 23.67px; }
+.ti-clip { --m: url("icons/clip.png"); width: 22.67px; height: 25px; }
+.ti-markup { --m: url("icons/markup.png"); width: 24px; height: 24px; }
+.ti-writing { --m: url("icons/writing.png"); width: 26.67px; height: 26px; }
+.ti-compose { --m: url("icons/compose.png"); width: 23.33px; height: 23.33px; }
+
+/* ---------------- knap til egen hjemmeskærm ---------------- */
+
+.field.link {
+  width: 100%;
+  color: var(--accent);
+  text-align: left;
+}
+.field.link > span { flex: 1; }
+.chev {
+  width: 8px;
+  height: 8px;
+  border: solid var(--label3);
+  border-width: 2px 2px 0 0;
+  transform: rotate(45deg);
+}
+
+
+/* =========================================================
+   Noter+ — Cryptext-tegning, hurtig plet og performer-panel
+   ========================================================= */
+
+/* Tegningen i noten (som en håndskrevet tegning i Noter) */
+.ink-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 26px 0 40px;
+}
+canvas.ink {
+  display: block;
+  transform-origin: 50% 50%;
+}
+canvas.ink.spin { transition: transform 1.6s cubic-bezier(0.45, 0, 0.2, 1); }
+
+/* Tilskuerens egen note */
+.note-edit {
+  min-height: 60vh;
+  outline: none;
+  font-size: 18px;
+  line-height: 1.45;
+  -webkit-user-select: text;
+  user-select: text;
+  caret-color: var(--accent);
+}
+.note-edit:empty::before { content: ""; }
+
+/* Hurtig plet: usynligt felt i et hjørne af noten */
+.flip-spot {
+  position: absolute;
+  z-index: 25;
+  width: 66px;
+  height: 66px;
+  display: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.flip-spot.on { display: block; }
+.flip-spot[data-corner="tr"] { right: 0; top: calc(env(safe-area-inset-top) + var(--nav-h) + 18px); }
+.flip-spot[data-corner="tl"] { left: 0; top: calc(env(safe-area-inset-top) + var(--nav-h) + 18px); }
+.flip-spot[data-corner="br"] { right: 0; bottom: calc(env(safe-area-inset-bottom) + var(--bar-h) + 30px + var(--kb, 0px)); }
+.flip-spot[data-corner="bl"] { left: 0; bottom: calc(env(safe-area-inset-bottom) + var(--bar-h) + 30px + var(--kb, 0px)); }
+/* Prikken: næsten usynlig, kun til dig. Sidder i pletten, tættest på skærmkanten */
+.flip-spot .tell {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--label3);
+  opacity: 0;
+}
+.flip-spot[data-corner$="r"] .tell { right: 7px; }
+.flip-spot[data-corner$="l"] .tell { left: 7px; }
+.flip-spot[data-corner^="t"] .tell { top: 10px; }
+.flip-spot[data-corner^="b"] .tell { bottom: 10px; }
+.flip-spot .tell.show { opacity: 0.55; }
+
+/* ---------------- panel ---------------- */
+
+.status-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: -8px 4px 4px;
+  font-size: 13px;
+  color: var(--label2);
+}
+.status-line span {
+  padding: 3px 9px;
+  border-radius: 10px;
+  background: var(--card);
+}
+.status-line b { color: var(--label); }
+
+.field .grow { flex: 1; min-width: 0; }
+.field .right { text-align: right; font-weight: 500; }
+.field.danger, .field.danger span { color: #ff453a; }
+.field select { font-size: 16px; }
+#linkStatus[data-s="online"] { color: #30d158; }
+#linkStatus[data-s="offline"] { color: #ff9f0a; }
+
+.field-hint {
+  margin: 8px 6px 6px;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--label2);
+}
+
+.preview-card {
+  margin: 8px 0 6px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--card);
+}
+.pv-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 15px;
+  color: var(--label2);
+}
+.pv-row b {
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--label);
+  font-variant-numeric: tabular-nums;
+}
+.pv-ink {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 10px;
+}
+.pv-ink figure {
+  margin: 0;
+  min-width: 0;
+  padding: 8px 4px 6px;
+  border-radius: 10px;
+  background: rgba(120, 120, 128, 0.14);
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  overflow: hidden;
+}
+.pv-ink canvas { max-width: 100%; height: auto !important; }
+.pv-ink canvas.flipped { transform: rotate(180deg); }
+.pv-ink figcaption { margin-top: 4px; font-size: 11px; color: var(--label2); }
+.pv-warn:empty { display: none; }
+.pv-warn {
+  margin: 10px 0 0;
+  font-size: 13px;
+  line-height: 1.35;
+  color: #ff9f0a;
+}
+
+/* iOS-kontakt */
+.switch {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: none;
+  margin-left: auto;
+  width: 51px;
+  height: 31px;
+  border-radius: 16px;
+  background: rgba(120, 120, 128, 0.32);
+  position: relative;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+.switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  transition: transform 0.22s var(--ease);
+}
+.switch:checked { background: #30d158; }
+.switch:checked::after { transform: translateX(20px); }
+.field > span:has(+ .switch) { flex: 1; }
+
+/* Bogstav-tabel */
+.glyph-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(58px, 1fr));
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.gcell {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 6px 2px 5px;
+  border-radius: 10px;
+  background: var(--card);
+}
+.gcell .gl { font-size: 11px; color: var(--label2); }
+.gcell canvas { height: 34px !important; width: auto !important; max-width: 52px; }
+.gcell input {
+  width: 44px;
+  border: 0;
+  border-radius: 6px;
+  padding: 3px 0;
+  text-align: center;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--label);
+  background: rgba(120, 120, 128, 0.18);
+  outline: none;
+}
+.gcell.manual input { color: var(--accent); }
+.gcell.weak input { color: #ff9f0a; }
+[hidden] { display: none !important; }

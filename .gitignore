@@ -1,0 +1,6 @@
+# Cryptext-fonten er kommerciel – den må aldrig i repoet
+*.ttf
+*.otf
+*.woff
+*.woff2
+node_modules
