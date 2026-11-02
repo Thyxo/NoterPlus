@@ -53,25 +53,24 @@ Fonten gemmes kun på telefonen. Cryptext 2.5 genkendes på filnavnet, og en kon
 Uden fonten virker kun bogstaverne **O I L Z E h S g B G t b**, fx *LISE* = 3517 og *BOB* = 808.
 
 ### 3. Forbind med lommeregneren
-- Noter+: panel → **Forbindelse → Lav en ny kode** (fx `k7m2qp`).
-- Lommeregneren: panel (5 tryk øverst til højre) → **Forbindelse til Noter+ → Kode**: samme kode.
-- Status skal vise **Forbundet**.
+- Noter+: panel → **Lommeregneren → Ny kode** (fx `k7m2qp`). *Kopiér* lægger koden i udklipsholderen.
+- Lommeregneren: panel (5 tryk øverst til højre) → **Noter+** → skriv koden eller tryk *Indsæt*.
+- Status skal vise grøn **Forbundet** i begge apps. Blå *Venter på …* betyder, at den anden app ikke er set med samme kode endnu.
 
 ---
 
 ## Panelet (3 tryk på den øverste bjælke)
 
-| Del | Hvad den gør |
+Øverst står et **overblik**, der altid er synligt: tallet lommeregneren viser, tegningen begge veje, mærker for font, forbindelse og navn, og advarsler. Resten er **sammenklappelige sektioner**. Lukket viser hver sektion et kort resumé (fx *Top ← · plet ↗*). Appen husker, hvilke der er åbne. **OK** sidder øverst til højre.
+
+| Sektion | Hvad den gør |
 |---|---|
-| **Statuslinje** | Font ✓, forbindelse ✓ og tallet lige nu |
-| **Noten viser** | *Navn → tal*, *Fast tal* (fx en dato) eller *Lommeregnerens resultat* |
-| **Bogstaver** | **Bedste (blandet)** er standard. Hvert bogstav skrives stort eller lille, alt efter hvad der ligner et tal bedst, og 0 undgås som første ciffer. Der er også *Stort forbogstav*, *STORE*, *Som skrevet* og *små* |
-| **Forhåndsvisning** | Det lommeregneren viser, tegningen begge veje og advarsler (svage bogstaver, 0 forrest, for mange cifre) |
-| **Navnet** | Fang navnet fra søgefeltet. **Ny note:** *Du taster navnet → håndskrift* (rutine 1), *Tilskueren skriver* (1. linje fanges) eller *Almindelig note*. *Slet tilskuernes noter* rydder op |
-| **Forudsigelses-noten** | Vis den i listen eller ej (skjul den til rutine 1), titel, tekst over, hvornår den er "skrevet" (i går aftes, 3 dage siden, i morges), blækfarve og størrelse |
+| **Forudsigelse** | *Navn*, *Fast tal* (fx en dato) eller *Resultat* (lommeregnerens). **Bogstaver:** *Bedste (blandet)* er standard. Hvert bogstav skrives stort eller lille, alt efter hvad der ligner et tal bedst, og 0 undgås som første ciffer. Der er også *Stort forbogstav*, *STORE*, *Som skrevet* og *små* |
+| **Lommeregneren** | Forbindelsen: status (grøn = forbundet, blå = venter på lommeregneren, gul = forbinder, orange = offline), hvornår lommeregneren sidst blev set, koden med *Ny kode* og *Kopiér*, og sidste resultat |
+| **Navnet** | Fang navnet fra søgefeltet. **Ny note:** *Du taster → håndskrift* (rutine 1), *Tilskueren skriver* (1. linje fanges) eller *Almindelig note*. *Slet tilskuernes noter* rydder op |
+| **Noten** | Vis den i listen eller ej (skjul den til rutine 1), titel, tekst over, hvornår den er "skrevet", blækfarve og størrelse |
 | **Vending** | Se nedenfor |
-| **Cryptext-font** | Vælg fil, *Bogstav-tegn* (auto/vendt/opret), *Tal-tegn for O I Z E S L B G*, kalibrér igen, fjern. **Tabellen** viser hvert bogstav, som det står i tal-vejen, og tallet det ligner. Ret et tal ved at skrive i feltet (orange = svagt, gul = rettet af dig) |
-| **Forbindelse** | Kode, status og sidste resultat fra lommeregneren |
+| **Cryptext-font** | Vælg fil, *Bogstav-tegn* (auto/vendt/opret), *Tal-tegn for O I Z E S L B G*, kalibrér igen, fjern. **Bogstav-tabellen** er klappet sammen (resumé: antal svage og rettede). Åbnet viser den hvert bogstav, som det står i tal-vejen, og tallet det ligner. Ret et tal ved at skrive i feltet (orange = svagt, gul = rettet af dig) |
 | **Hjemmeskærm** | Perform-tilstand med falsk hjemmeskærm (fra notes-app). Tryk på Noter-ikonet: noten åbner direkte på forudsigelsen |
 
 ### Vending: den hurtige plet
@@ -85,7 +84,7 @@ Uden fonten virker kun bogstaverne **O I L Z E h S g B G t b**, fx *LISE* = 3517
 
 ## Lommeregneren
 
-Nyt i Calcplus-panelet under **Forbindelse til Noter+**:
+I Calcplus-panelet under **Noter+**:
 
 | Felt | |
 |---|---|

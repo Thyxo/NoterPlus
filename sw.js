@@ -1,4 +1,4 @@
-const CACHE_NAME = "noterplus-v4";
+const CACHE_NAME = "noterplus-v5";
 const ASSETS = ["./", "./index.html", "./styles.css", "./fakehome.js", "./manifest.webmanifest",
   "./src/app.js", "./src/crypt.js", "./src/link.js", "./src/font.js", "./src/known.js",
   "./home/page1.webp", "./home/page2.webp", "./home/page3.webp",

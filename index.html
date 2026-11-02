@@ -186,201 +186,279 @@
     <!-- ============ PERFORMER ============ -->
     <div class="scrim" id="scrim" aria-hidden="true"></div>
 
-    <section class="sheet" id="settingsSheet" aria-hidden="true" aria-label="Performer-indstillinger">
-      <div class="grabber"></div>
-      <h2 class="sheet-title">Performer</h2>
-      <p class="status-line" id="statusLine"></p>
+    <section class="sheet panel" id="settingsSheet" aria-hidden="true" aria-label="Performer-indstillinger">
+      <header class="pn-head">
+        <div class="grabber"></div>
+        <h2 class="sheet-title">Performer</h2>
+        <button class="pn-done" id="saveSettings" type="button">OK</button>
+      </header>
 
-      <p class="field-note">Forudsigelse</p>
-      <div class="field-card">
-        <label class="field">
-          <span>Noten viser</span>
-          <select id="sourceSelect">
-            <option value="name">Navn → tal (Cryptext)</option>
-            <option value="number">Fast tal</option>
-            <option value="calc">Lommeregnerens resultat</option>
-          </select>
-        </label>
-        <label class="field" data-show="name">
-          <span>Navn</span>
-          <input id="nameInput" type="text" autocomplete="off" autocorrect="off" autocapitalize="words"
-                 spellcheck="false" enterkeyhint="done" placeholder="fx Lise" />
-        </label>
-        <label class="field" data-show="name">
-          <span>Bogstaver</span>
-          <select id="caseSelect">
-            <option value="best">Bedste (blandet)</option>
-            <option value="title">Stort forbogstav</option>
-            <option value="upper">STORE</option>
-            <option value="asTyped">Som skrevet</option>
-            <option value="lower">små</option>
-          </select>
-        </label>
-        <label class="field" data-show="number">
-          <span>Tal</span>
-          <input id="numberInput" type="text" inputmode="numeric" autocomplete="off" placeholder="fx 3517" />
-        </label>
-      </div>
-      <div class="preview-card">
-        <div class="pv-row"><span>Lommeregneren viser</span><b id="pvDigits">–</b></div>
+      <!-- Overblik: altid synligt -->
+      <div class="hero">
+        <div class="hero-top">
+          <span class="hero-label">Lommeregneren viser</span>
+          <b class="hero-num" id="pvDigits">–</b>
+        </div>
         <div class="pv-ink">
           <figure><canvas id="pvNumber"></canvas><figcaption>Tal-vejen</figcaption></figure>
           <figure><canvas id="pvName" class="flipped"></canvas><figcaption>Vendt</figcaption></figure>
         </div>
+        <p class="status-line" id="statusLine"></p>
         <p class="pv-warn" id="pvWarn"></p>
       </div>
 
-      <p class="field-note">Navnet</p>
-      <div class="field-card">
-        <label class="field">
-          <span>I søgefeltet</span>
-          <input type="checkbox" class="switch" id="capSearch" />
-        </label>
-        <label class="field">
-          <span>Ny note</span>
-          <select id="newNoteMode">
-            <option value="ink">Du taster navnet → håndskrift</option>
-            <option value="capture">Tilskueren skriver (1. linje)</option>
-            <option value="plain">Almindelig note</option>
-          </select>
-        </label>
-        <button class="field link" id="clearUserNotes" type="button"><span>Slet tilskuernes noter</span></button>
-      </div>
+      <!-- Forudsigelse -->
+      <details class="psec" data-sec="pred" open>
+        <summary>
+          <i class="sec-ico" style="--c:#ff9f0a"><svg viewBox="0 0 24 24"><path d="M12 3.5l2.2 5.3 5.3 2.2-5.3 2.2L12 18.5l-2.2-5.3L4.5 11l5.3-2.2z"/></svg></i>
+          <span class="sec-t">Forudsigelse</span><span class="sec-v" id="sumPred"></span><i class="chev"></i>
+        </summary>
+        <div class="sec-body">
+          <div class="seg" id="sourceSeg" role="tablist">
+            <button type="button" data-v="name">Navn</button>
+            <button type="button" data-v="number">Fast tal</button>
+            <button type="button" data-v="calc">Resultat</button>
+          </div>
+          <div class="field-card">
+            <label class="field" data-show="name">
+              <span>Navn</span>
+              <input id="nameInput" type="text" autocomplete="off" autocorrect="off" autocapitalize="words"
+                     spellcheck="false" enterkeyhint="done" placeholder="fx Lise" />
+            </label>
+            <label class="field" data-show="name">
+              <span>Bogstaver</span>
+              <select id="caseSelect">
+                <option value="best">Bedste (blandet)</option>
+                <option value="title">Stort forbogstav</option>
+                <option value="upper">STORE</option>
+                <option value="asTyped">Som skrevet</option>
+                <option value="lower">små</option>
+              </select>
+            </label>
+            <label class="field" data-show="number">
+              <span>Tal</span>
+              <input id="numberInput" type="text" inputmode="numeric" autocomplete="off" placeholder="fx 3517" />
+            </label>
+            <div class="field" data-show="calc">
+              <span class="grow hint-text">Tilskueren regner frit. Noten viser det tal, lommeregneren fik.</span>
+            </div>
+          </div>
+        </div>
+      </details>
 
-      <p class="field-note">Forudsigelses-noten</p>
-      <div class="field-card">
-        <label class="field">
-          <span>Vis noten i listen</span>
-          <input type="checkbox" class="switch" id="showPrediction" />
-        </label>
-        <label class="field">
-          <span>Titel</span>
-          <input id="noteTitle" type="text" autocomplete="off" autocapitalize="sentences" />
-        </label>
-        <label class="field">
-          <span>Tekst over</span>
-          <input id="noteText" type="text" autocomplete="off" autocapitalize="sentences" placeholder="(ingen)" />
-        </label>
-        <label class="field">
-          <span>Skrevet</span>
-          <select id="noteWhen">
-            <option value="yesterday">I går aftes</option>
-            <option value="days">For 3 dage siden</option>
-            <option value="today">I morges</option>
-          </select>
-        </label>
-        <label class="field">
-          <span>Blæk</span>
-          <select id="inkColor">
-            <option value="auto">Hvid / sort</option>
-            <option value="#ffd60a">Gul</option>
-            <option value="#0a84ff">Blå</option>
-            <option value="#ff453a">Rød</option>
-          </select>
-        </label>
-        <label class="field">
-          <span>Størrelse</span>
-          <select id="inkSize">
-            <option value="72">Lille</option>
-            <option value="96">Mellem</option>
-            <option value="124">Stor</option>
-          </select>
-        </label>
-      </div>
+      <!-- Forbindelse -->
+      <details class="psec" data-sec="link">
+        <summary>
+          <i class="sec-ico" style="--c:#30d158"><svg viewBox="0 0 24 24"><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1.3 1.3"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1.3-1.3"/></svg></i>
+          <span class="sec-t">Lommeregneren</span><span class="sec-v" id="sumLink"><i class="dot"></i><span></span></span><i class="chev"></i>
+        </summary>
+        <div class="sec-body">
+          <div class="link-card" id="linkCard" data-s="off">
+            <div class="lk-state"><i class="dot"></i><b id="linkStatus">–</b></div>
+            <p class="lk-peer" id="linkPeer"></p>
+            <label class="lk-code">
+              <span>Kode</span>
+              <input id="roomInput" type="text" autocomplete="off" autocorrect="off" autocapitalize="off"
+                     spellcheck="false" enterkeyhint="done" placeholder="––––––" />
+            </label>
+            <div class="lk-actions">
+              <button type="button" id="roomNew">Ny kode</button>
+              <button type="button" id="roomCopy">Kopiér</button>
+            </div>
+            <p class="lk-hint">Skriv samme kode i lommeregneren:<br />5 tryk øverst til højre → <b>Noter+</b>.</p>
+          </div>
+          <div class="field-card">
+            <div class="field"><span>Sidste resultat</span><b class="grow right" id="lastResult">–</b></div>
+          </div>
+        </div>
+      </details>
 
-      <p class="field-note">Vending</p>
-      <div class="field-card">
-        <label class="field">
-          <span>Skrevet</span>
-          <select id="inkLie">
-            <option value="left">Liggende – toppen mod venstre</option>
-            <option value="right">Liggende – toppen mod højre</option>
-            <option value="up">Opret</option>
-          </select>
-        </label>
-        <label class="field">
-          <span>Når noten åbnes</span>
-          <select id="startSide">
-            <option value="number">Tallet op</option>
-            <option value="name">Navnet op</option>
-          </select>
-        </label>
-        <label class="field">
-          <span>Hurtig plet</span>
-          <select id="flipCorner">
-            <option value="tr">Øverst til højre</option>
-            <option value="tl">Øverst til venstre</option>
-            <option value="br">Nederst til højre</option>
-            <option value="bl">Nederst til venstre</option>
-            <option value="off">Fra</option>
-          </select>
-        </label>
-        <label class="field">
-          <span>Tryk på pletten</span>
-          <select id="flipStyle">
-            <option value="instant">Vend med det samme</option>
-            <option value="spin">Drej langsomt (synligt)</option>
-          </select>
-        </label>
-        <label class="field">
-          <span>Prik når tallet står op</span>
-          <input type="checkbox" class="switch" id="tellDot" />
-        </label>
-      </div>
+      <!-- Navnet -->
+      <details class="psec" data-sec="name">
+        <summary>
+          <i class="sec-ico" style="--c:#0a84ff"><svg viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.6"/><path d="M5 19.5a7 7 0 0 1 14 0"/></svg></i>
+          <span class="sec-t">Navnet</span><span class="sec-v" id="sumName"></span><i class="chev"></i>
+        </summary>
+        <div class="sec-body">
+          <div class="field-card">
+            <label class="field">
+              <span>Fang i søgefeltet</span>
+              <input type="checkbox" class="switch" id="capSearch" />
+            </label>
+            <label class="field">
+              <span>Ny note</span>
+              <select id="newNoteMode">
+                <option value="ink">Du taster → håndskrift</option>
+                <option value="capture">Tilskueren skriver</option>
+                <option value="plain">Almindelig note</option>
+              </select>
+            </label>
+            <button class="field link danger" id="clearUserNotes" type="button"><span>Slet tilskuernes noter</span></button>
+          </div>
+        </div>
+      </details>
 
-      <p class="field-note">Cryptext-font</p>
-      <div class="field-card">
-        <div class="field"><span class="grow" id="fontStatus">Ingen font</span></div>
-        <button class="field link" id="fontPick" type="button"><span>Vælg font-fil …</span><i class="chev" aria-hidden="true"></i></button>
-        <label class="field" data-font>
-          <span>Bogstav-tegn</span>
-          <select id="letterRot">
-            <option value="auto">Auto</option>
-            <option value="rotated">Vendt i tal-vejen</option>
-            <option value="upright">Opret i tal-vejen</option>
-          </select>
-        </label>
-        <label class="field" data-font>
-          <span>Tal-tegn for O I Z E S L B G</span>
-          <input type="checkbox" class="switch" id="preferDigits" />
-        </label>
-        <button class="field link" id="recalibrate" type="button" data-font><span>Kalibrér igen</span></button>
-        <button class="field link danger" id="fontRemove" type="button" data-font><span>Fjern font fra telefonen</span></button>
-      </div>
-      <p class="field-hint" data-font>Tabellen: hvert bogstav, som det står i tal-vejen, og tallet det ligner. Ret et tal, hvis det ikke passer.</p>
-      <div class="glyph-grid" id="glyphGrid" data-font></div>
+      <!-- Forudsigelses-noten -->
+      <details class="psec" data-sec="note">
+        <summary>
+          <i class="sec-ico" style="--c:#ffd60a"><svg viewBox="0 0 24 24"><rect x="5" y="3.5" width="14" height="17" rx="2.5"/><path d="M8.5 8.5h7M8.5 12h7M8.5 15.5h4"/></svg></i>
+          <span class="sec-t">Noten</span><span class="sec-v" id="sumNote"></span><i class="chev"></i>
+        </summary>
+        <div class="sec-body">
+          <div class="field-card">
+            <label class="field">
+              <span>Vis i listen</span>
+              <input type="checkbox" class="switch" id="showPrediction" />
+            </label>
+            <label class="field">
+              <span>Titel</span>
+              <input id="noteTitle" type="text" autocomplete="off" autocapitalize="sentences" />
+            </label>
+            <label class="field">
+              <span>Tekst over</span>
+              <input id="noteText" type="text" autocomplete="off" autocapitalize="sentences" placeholder="(ingen)" />
+            </label>
+            <label class="field">
+              <span>Skrevet</span>
+              <select id="noteWhen">
+                <option value="yesterday">I går aftes</option>
+                <option value="days">For 3 dage siden</option>
+                <option value="today">I morges</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Blæk</span>
+              <select id="inkColor">
+                <option value="auto">Hvid / sort</option>
+                <option value="#ffd60a">Gul</option>
+                <option value="#0a84ff">Blå</option>
+                <option value="#ff453a">Rød</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Størrelse</span>
+              <select id="inkSize">
+                <option value="72">Lille</option>
+                <option value="96">Mellem</option>
+                <option value="124">Stor</option>
+              </select>
+            </label>
+          </div>
+        </div>
+      </details>
 
-      <p class="field-note">Forbindelse til lommeregneren</p>
-      <div class="field-card">
-        <label class="field">
-          <span>Kode</span>
-          <input id="roomInput" type="text" autocomplete="off" autocorrect="off" autocapitalize="off"
-                 spellcheck="false" placeholder="samme kode i begge apps" />
-        </label>
-        <button class="field link" id="roomNew" type="button"><span>Lav en ny kode</span></button>
-        <div class="field"><span>Status</span><b class="grow right" id="linkStatus">–</b></div>
-        <div class="field"><span>Sidste resultat</span><b class="grow right" id="lastResult">–</b></div>
-      </div>
+      <!-- Vending -->
+      <details class="psec" data-sec="flip">
+        <summary>
+          <i class="sec-ico" style="--c:#bf5af2"><svg viewBox="0 0 24 24"><path d="M19 12a7 7 0 0 1-12.2 4.7"/><path d="M5 12a7 7 0 0 1 12.2-4.7"/><path d="M17.5 3.5v4h-4M6.5 20.5v-4h4"/></svg></i>
+          <span class="sec-t">Vending</span><span class="sec-v" id="sumFlip"></span><i class="chev"></i>
+        </summary>
+        <div class="sec-body">
+          <div class="field-card">
+            <label class="field">
+              <span>Skrevet</span>
+              <select id="inkLie">
+                <option value="left">Liggende, top ←</option>
+                <option value="right">Liggende, top →</option>
+                <option value="up">Opret</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Når noten åbnes</span>
+              <select id="startSide">
+                <option value="number">Tallet op</option>
+                <option value="name">Navnet op</option>
+              </select>
+            </label>
+          </div>
+          <p class="sub-note">Hurtig plet – usynligt felt, ét tryk vender tegningen</p>
+          <div class="field-card">
+            <label class="field">
+              <span>Placering</span>
+              <select id="flipCorner">
+                <option value="tr">Øverst til højre</option>
+                <option value="tl">Øverst til venstre</option>
+                <option value="br">Nederst til højre</option>
+                <option value="bl">Nederst til venstre</option>
+                <option value="off">Fra</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Vending</span>
+              <select id="flipStyle">
+                <option value="instant">Med det samme</option>
+                <option value="spin">Drej langsomt</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Prik når tallet står op</span>
+              <input type="checkbox" class="switch" id="tellDot" />
+            </label>
+          </div>
+        </div>
+      </details>
 
-      <p class="field-note">Hjemmeskærm (perform)</p>
-      <div class="field-card">
-        <label class="field">
-          <span>Hjemmeskærm</span>
-          <select id="homeModeSelect">
-            <option value="default">Standard</option>
-            <option value="custom">Egen</option>
-          </select>
-        </label>
-        <button class="field link" id="openHomeSetup" type="button">
-          <span>Opsæt egen hjemmeskærm</span>
-          <i class="chev" aria-hidden="true"></i>
-        </button>
-      </div>
+      <!-- Font -->
+      <details class="psec" data-sec="font">
+        <summary>
+          <i class="sec-ico" style="--c:#ff375f"><b>Aa</b></i>
+          <span class="sec-t">Cryptext-font</span><span class="sec-v" id="sumFont"></span><i class="chev"></i>
+        </summary>
+        <div class="sec-body">
+          <div class="field-card">
+            <div class="field"><span class="grow font-status" id="fontStatus">Ingen font</span></div>
+            <button class="field link" id="fontPick" type="button"><span>Vælg font-fil …</span><i class="chev" aria-hidden="true"></i></button>
+            <label class="field" data-font>
+              <span>Bogstav-tegn</span>
+              <select id="letterRot">
+                <option value="auto">Auto</option>
+                <option value="rotated">Vendt i tal-vejen</option>
+                <option value="upright">Opret i tal-vejen</option>
+              </select>
+            </label>
+            <label class="field" data-font>
+              <span>Tal-tegn for O I Z E S L B G</span>
+              <input type="checkbox" class="switch" id="preferDigits" />
+            </label>
+          </div>
+          <details class="sub" id="glyphSec" data-sec="glyphs" data-font>
+            <summary><span class="grow">Bogstav-tabel</span><span class="sec-v" id="sumGlyphs"></span><i class="chev"></i></summary>
+            <p class="field-hint">Hvert bogstav, som det står i tal-vejen, og tallet det ligner. Skriv et andet tal, hvis det ikke passer. <span class="k-weak">Orange</span> = svagt, <span class="k-manual">gul</span> = rettet af dig.</p>
+            <div class="glyph-grid" id="glyphGrid"></div>
+          </details>
+          <div class="field-card" data-font>
+            <button class="field link" id="recalibrate" type="button"><span>Kalibrér igen</span></button>
+            <button class="field link danger" id="fontRemove" type="button"><span>Fjern font fra telefonen</span></button>
+          </div>
+        </div>
+      </details>
 
-      <p class="field-note diag" id="viewportDiag"></p>
+      <!-- Hjemmeskærm -->
+      <details class="psec" data-sec="home">
+        <summary>
+          <i class="sec-ico" style="--c:#64d2ff"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1.6"/><rect x="14" y="4" width="6" height="6" rx="1.6"/><rect x="4" y="14" width="6" height="6" rx="1.6"/><rect x="14" y="14" width="6" height="6" rx="1.6"/></svg></i>
+          <span class="sec-t">Hjemmeskærm</span><span class="sec-v" id="sumHome"></span><i class="chev"></i>
+        </summary>
+        <div class="sec-body">
+          <div class="field-card">
+            <label class="field">
+              <span>Skærm</span>
+              <select id="homeModeSelect">
+                <option value="default">Standard</option>
+                <option value="custom">Egen</option>
+              </select>
+            </label>
+            <button class="field link" id="openHomeSetup" type="button">
+              <span>Opsæt egen hjemmeskærm</span>
+              <i class="chev" aria-hidden="true"></i>
+            </button>
+          </div>
+          <p class="field-hint">Perform viser en falsk hjemmeskærm. Tryk på Noter-ikonet: noten åbner direkte på forudsigelsen.</p>
+        </div>
+      </details>
 
-      <button class="primary" id="saveSettings" type="button">OK</button>
-      <button class="secondary" id="performButton" type="button">Perform</button>
+      <button class="primary" id="performButton" type="button">Perform</button>
+      <p class="diag" id="viewportDiag"></p>
       <input type="file" id="fontFile" accept=".ttf,.otf,.woff,.woff2" hidden />
     </section>
     <script src="fakehome.js"></script>

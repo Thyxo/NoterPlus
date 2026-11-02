@@ -52,6 +52,7 @@ let tapTimes = [];
 let settingsOpenedAt = 0;
 let link = null;
 let linkStatus = 'off';
+let peerSeen = 0; // hvornår lommeregneren sidst meldte sig i rummet
 
 function loadState() {
   try {
@@ -166,6 +167,10 @@ function onRemote(remote) {
     }
     changed = true;
   }
+  if (remote.hiCalc?.at > peerSeen) {
+    peerSeen = remote.hiCalc.at;
+    if (settingsSheet.classList.contains('open')) syncLinkStatus();
+  }
   const r = remote.result;
   if (r && r.at > (state.calcResult?.at || 0)) {
     state.calcResult = r;
@@ -200,17 +205,42 @@ function startLink() {
     onState: onRemote,
     onStatus: (s) => {
       linkStatus = s;
+      // Fortæl lommeregneren, at Noter+ er i rummet
+      if (s === 'online') link?.publish({ hiNotes: { at: Date.now() } });
       syncLinkStatus();
     },
   });
 }
 
-const STATUS_TEXT = { off: 'Ingen kode', connecting: 'Forbinder …', online: 'Forbundet', offline: 'Offline – sender senere' };
+/* "for 2 min. siden" */
+function ago(at) {
+  const s = Math.max(0, Math.round((Date.now() - at) / 1000));
+  if (s < 60) return 'lige nu';
+  if (s < 3600) return `for ${Math.round(s / 60)} min. siden`;
+  if (s < 86400) return `kl. ${clock(new Date(at))}`;
+  return 'for over et døgn siden';
+}
+
+/* Samlet forbindelses-tilstand: relæet + om lommeregneren har meldt sig i rummet */
+function linkView() {
+  const seen = Math.max(peerSeen || 0, state.calcResult?.at || 0);
+  if (linkStatus === 'off') return { s: 'off', text: 'Ingen kode', short: 'Ingen kode', peer: 'Tryk Ny kode, og skriv den i lommeregneren.' };
+  if (linkStatus === 'connecting') return { s: 'connecting', text: 'Forbinder …', short: 'Forbinder', peer: '' };
+  if (linkStatus === 'offline') return { s: 'offline', text: 'Offline', short: 'Offline', peer: 'Ændringer sendes, når der er net igen.' };
+  if (!seen) return { s: 'waiting', text: 'Venter på lommeregneren', short: 'Venter', peer: 'Skriv koden i lommeregneren.' };
+  return { s: 'online', text: 'Forbundet', short: 'Forbundet', peer: `Lommeregneren sidst set ${ago(seen)}` };
+}
+
 function syncLinkStatus() {
   const el = document.querySelector('#linkStatus');
   if (!el) return;
-  el.textContent = STATUS_TEXT[linkStatus] || linkStatus;
-  el.dataset.s = linkStatus;
+  const v = linkView();
+  el.textContent = v.text;
+  $('#linkCard').dataset.s = v.s;
+  $('#linkPeer').textContent = v.peer;
+  const sum = $('#sumLink');
+  sum.dataset.s = v.s;
+  sum.querySelector('span').textContent = v.s === 'off' ? v.short : `${state.room} · ${v.short}`;
   syncStatusLine();
 }
 
@@ -732,12 +762,31 @@ document.querySelectorAll('[data-scroll]').forEach((scroller) => {
 /* ---------------- performer-ark ---------------- */
 
 const fields = {
-  sourceSelect: 'source', nameInput: 'name', caseSelect: 'caseMode', numberInput: 'number',
+  nameInput: 'name', caseSelect: 'caseMode', numberInput: 'number',
   capSearch: 'capSearch', newNoteMode: 'newNoteMode', inkLie: 'inkLie', showPrediction: 'showPrediction', noteTitle: 'noteTitle', noteText: 'noteText',
   noteWhen: 'noteWhen', inkColor: 'inkColor', inkSize: 'inkSize', startSide: 'startSide',
   flipCorner: 'flipCorner', flipStyle: 'flipStyle', tellDot: 'tellDot', letterRot: 'letterRot',
   preferDigits: 'preferDigits', roomInput: 'room',
 };
+
+const LABEL = (id) => (el => el?.selectedOptions?.[0]?.textContent || '')(document.getElementById(id));
+
+/* Kort resumé af hver sektion, så man kan se indstillingerne uden at åbne dem */
+function syncSummaries() {
+  const src = { name: `Navn: ${state.name || '–'}`, number: `Fast tal: ${state.number || '–'}`, calc: 'Lommeregnerens resultat' };
+  $('#sumPred').textContent = src[state.source] || '';
+  const how = { ink: 'Håndskrift', capture: 'Tilskueren skriver', plain: 'Almindelig' }[state.newNoteMode];
+  $('#sumName').textContent = `${state.capSearch ? 'Søgefelt · ' : ''}${how}`;
+  $('#sumNote').textContent = state.showPrediction ? LABEL('noteWhen') : 'Skjult';
+  const lie = { left: 'Top ←', right: 'Top →', up: 'Opret' }[state.inkLie];
+  const corner = { tr: 'plet ↗', tl: 'plet ↖', br: 'plet ↘', bl: 'plet ↙', off: 'ingen plet' }[state.flipCorner];
+  $('#sumFlip').textContent = `${lie} · ${corner}`;
+  $('#sumFont').innerHTML = isFontReady()
+    ? `<i class="dot ok"></i><span>${esc(loadedFontName().replace(/\.(ttf|otf|woff2?)$/i, ''))}</span>`
+    : '<i class="dot warn"></i><span>Mangler</span>';
+  $('#sumHome').textContent = fakeHome.mode === 'custom' ? 'Egen' : 'Standard';
+  document.querySelectorAll('#sourceSeg button').forEach((b) => b.classList.toggle('on', b.dataset.v === state.source));
+}
 
 function syncPanel() {
   for (const [id, key] of Object.entries(fields)) {
@@ -758,8 +807,10 @@ function syncPanel() {
   homeSel.querySelector("[value='custom']").disabled = !fakeHome.hasCustom();
   homeSel.value = fakeHome.mode;
   syncLinkStatus();
+  syncSummaries();
   renderPreview();
-  if (isFontReady()) renderGlyphGrid();
+  if (isFontReady() && $('#glyphSec').open) renderGlyphGrid();
+  else syncGlyphSummary();
   fitViewport();
   $('#viewportDiag').textContent = `Skærm ${viewportInfo.screen} · inner ${viewportInfo.inner} · bruger ${viewportInfo.used}`;
 }
@@ -767,10 +818,14 @@ function syncPanel() {
 function syncStatusLine() {
   const el = $('#statusLine');
   if (!el) return;
-  const plan = currentPlan();
-  const font = isFontReady() ? 'Font ✓' : 'Ingen font';
-  const conn = linkStatus === 'online' ? 'Lommeregner ✓' : link ? 'Lommeregner …' : 'Ingen forbindelse';
-  el.innerHTML = `<span>${esc(font)}</span><span>${esc(conn)}</span><span>Tal: <b>${esc(danishGroup(plan.digits) || '–')}</b></span>`;
+  const font = isFontReady()
+    ? '<span class="chip"><i class="dot ok"></i>Font</span>'
+    : '<span class="chip"><i class="dot warn"></i>Ingen font</span>';
+  const v = linkView();
+  const conn = `<span class="chip" data-s="${v.s}"><i class="dot"></i>${v.s === 'online' ? 'Lommeregner' : v.s === 'off' ? 'Ingen forbindelse' : esc(v.short)}</span>`;
+  const src = { name: 'Navn', number: 'Fast tal', calc: 'Resultat' }[state.source];
+  const what = state.source === 'name' ? `${src}: <b>${esc(currentPlan().name || state.name || '–')}</b>` : src;
+  el.innerHTML = `${font}${conn}<span class="chip">${what}</span>`;
 }
 
 function renderPreview() {
@@ -782,12 +837,22 @@ function renderPreview() {
   renderInk($('#pvName'), glyphs, { size: 54, maxWidth: 150, color });
   const warn = [...(plan.warnings || [])];
   if (state.source === 'calc' && !state.calcResult) warn.push('Intet resultat fra lommeregneren endnu.');
-  if (state.source === 'name' && !isFontReady()) warn.push('Indlæs Cryptext-fonten for alle bogstaver.');
+  if (state.source === 'name' && !isFontReady() && !warn.some((w) => w.includes('fonten'))) warn.push('Indlæs Cryptext-fonten for alle bogstaver.');
   $('#pvWarn').textContent = warn.join(' ');
   syncStatusLine();
 }
 
+function syncGlyphSummary() {
+  const el = $('#sumGlyphs');
+  if (!el || !isFontReady()) return;
+  const scores = planOptions().scores;
+  const manual = Object.keys(state.manualMap).length;
+  const weak = LETTERS.filter((L) => scores[L] !== undefined && scores[L] < 0.45 && !(L in state.manualMap)).length;
+  el.textContent = [`${LETTERS.length}`, weak && `${weak} svage`, manual && `${manual} rettet`].filter(Boolean).join(' · ');
+}
+
 function renderGlyphGrid() {
+  syncGlyphSummary();
   const grid = $('#glyphGrid');
   const map = currentMap();
   const rot = effectiveRot() === 'rotated' ? 180 : 0;
@@ -852,6 +917,10 @@ function onPanelChange(e) {
     publishForce({ now: true });
     return;
   }
+  applyField(key, value);
+}
+
+function applyField(key, value) {
   if (state[key] === value) return;
   state[key] = value;
   if (key === 'name' || key === 'caseMode') state.nameExact = false;
@@ -860,7 +929,8 @@ function onPanelChange(e) {
   if (['source', 'name', 'caseMode', 'number', 'letterRot', 'preferDigits'].includes(key)) publishForce();
   if (['source', 'letterRot'].includes(key)) syncPanel();
   else renderPreview();
-  if (key === 'letterRot' && isFontReady()) renderGlyphGrid();
+  if (key === 'letterRot' && isFontReady() && $('#glyphSec').open) renderGlyphGrid();
+  syncSummaries();
   renderNotes();
   renderNotePage();
 }
@@ -1025,6 +1095,38 @@ function registerEvents() {
   settingsSheet.addEventListener('change', onPanelChange);
   $('#nameInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') e.target.blur(); });
 
+  $('#sourceSeg').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-v]');
+    if (b) applyField('source', b.dataset.v);
+  });
+
+  // Sektioner: husk hvilke der er åbne
+  const openKey = 'noterplus.open';
+  let openSecs = {};
+  try { openSecs = JSON.parse(localStorage.getItem(openKey) || '{}'); } catch { openSecs = {}; }
+  settingsSheet.querySelectorAll('details[data-sec]').forEach((d) => {
+    if (d.dataset.sec in openSecs) d.open = openSecs[d.dataset.sec];
+    d.addEventListener('toggle', () => {
+      openSecs[d.dataset.sec] = d.open;
+      try { localStorage.setItem(openKey, JSON.stringify(openSecs)); } catch { /* ok */ }
+      if (d.id === 'glyphSec' && d.open && isFontReady()) renderGlyphGrid();
+      if (d.dataset.sec === 'link' && d.open) syncLinkStatus();
+    });
+  });
+
+  $('#roomInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') e.target.blur(); });
+  $('#roomCopy').addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    if (!state.room) return;
+    try {
+      await navigator.clipboard.writeText(state.room);
+      btn.textContent = 'Kopieret ✓';
+    } catch {
+      btn.textContent = 'Kunne ikke';
+    }
+    setTimeout(() => { btn.textContent = 'Kopiér'; }, 1400);
+  });
+
   $('#roomNew').addEventListener('click', () => {
     state.room = newRoomCode();
     saveState();
@@ -1032,6 +1134,7 @@ function registerEvents() {
     startLink();
     lastSentKey = '';
     publishForce({ now: true });
+    syncLinkStatus();
   });
 
   $('#clearUserNotes').addEventListener('click', () => {
@@ -1085,7 +1188,7 @@ function registerEvents() {
     if (wasPerforming) fakeHome.exit();
     else fakeHome.perform();
   });
-  $('#homeModeSelect').addEventListener('change', (e) => fakeHome.setMode(e.target.value));
+  $('#homeModeSelect').addEventListener('change', (e) => { fakeHome.setMode(e.target.value); syncSummaries(); });
   $('#openHomeSetup').addEventListener('click', () => {
     closeSettings();
     fakeHome.openSetup({ onClose: openSettings });
