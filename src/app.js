@@ -109,6 +109,8 @@ function currentPlan() {
 
 /* Forcetallet sendes til lommeregneren, når navn eller tal ændres her */
 let publishTimer = null;
+// det der allerede er sendt (så åbning af appen ikke sender og nulstiller lommeregneren igen)
+let lastSentKey = state.force && state.force.by === 'notes' ? `${state.force.digits}|${state.force.name}` : '';
 function publishForce({ now = false } = {}) {
   if (state.source === 'calc') return;
   const plan = currentPlan();
@@ -119,10 +121,13 @@ function publishForce({ now = false } = {}) {
     by: 'notes',
     at: Date.now(),
   };
+  // Samme navn og tal som sidst: send ikke igen (lommeregneren ville nulstille sin tæller)
+  const key = `${force.digits}|${force.name}`;
+  if (key === lastSentKey && !publishTimer) return;
   state.force = force;
   saveState();
   clearTimeout(publishTimer);
-  const send = () => link?.publish({ force, cmap: cmapPayload() });
+  const send = () => { publishTimer = null; lastSentKey = key; link?.publish({ force, cmap: cmapPayload() }); };
   if (now) send();
   else publishTimer = setTimeout(send, 500);
 }
@@ -640,6 +645,18 @@ function newNote() {
   if (!ink) $('#noteEdit')?.focus();
 }
 
+/* Send navnet fra håndskrift-noten til lommeregneren mens du taster (lidt forsinket),
+   så det er fremme, selv hvis du går direkte til lommeregneren uden at trykke tilbage. */
+function pushInkName(u, now) {
+  const name = normalizeName(u?.cased || '');
+  if (!name) return;
+  state.name = name;
+  state.nameExact = true;
+  state.source = 'name';
+  saveState();
+  publishForce({ now });
+}
+
 /* Håndskrift-note: du taster navnet, det tegnes bogstav for bogstav.
    Hvert bogstav får sit store/lille bogstav, når det skrives, og ændres ikke bagefter. */
 const inkInput = document.querySelector('#inkInput');
@@ -664,6 +681,7 @@ function onInkInput() {
   u.raw = raw;
   u.cased = cased;
   saveState();
+  pushInkName(u, false);
   const grew = cased.trimEnd().length > prev.trimEnd().length;
   clearTimeout(inkAnim);
   if (grew) {
@@ -830,6 +848,7 @@ function onPanelChange(e) {
     el.value = state.room;
     saveState();
     startLink();
+    lastSentKey = '';
     publishForce({ now: true });
     return;
   }
@@ -962,6 +981,14 @@ function registerEvents() {
   });
 
   inkInput.addEventListener('input', onInkInput);
+  // Forlades appen (swipe hjem til lommeregneren): send med det samme
+  const sendNow = () => {
+    const u = state.userNotes.find((x) => x.id === state.selectedNote && x.ink);
+    if (u) pushInkName(u, true);
+    else if (publishTimer) publishForce({ now: true });
+  };
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') sendNow(); });
+  window.addEventListener('pagehide', sendNow);
   inkInput.addEventListener('focus', () => setTimeout(() => drawPrediction(), 350));
   inkInput.addEventListener('blur', () => setTimeout(() => { if (selectedNote()?.ink) drawPrediction(); }, 350));
   inkInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); inkInput.blur(); } });
@@ -1003,6 +1030,7 @@ function registerEvents() {
     saveState();
     $('#roomInput').value = state.room;
     startLink();
+    lastSentKey = '';
     publishForce({ now: true });
   });
 
