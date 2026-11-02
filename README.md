@@ -64,7 +64,8 @@ Uden fonten virker kun bogstaverne **O I L Z E h S g B G t b**, fx *LISE* = 3517
 Som på iPhone: træk en note **til venstre** i listen. Et kort træk viser den røde slet-knap, og et langt træk sletter med det samme. Tryk et andet sted for at lukke knappen igen.
 
 - Tilskuernes egne noter slettes helt.
-- *Forudsigelse* og de faste noter bliver kun skjult. Panel → **Noten → Gendan slettede noter** henter dem tilbage.
+- De faste noter (Indkøb, Julegaver …) bliver kun skjult. Panel → **Noten → Gendan slettede noter** henter dem tilbage.
+- *Forudsigelse* er beskyttet og kan ikke swipes væk. Den skjules i panelet med *Vis i listen*.
 
 ## Panelet (3 tryk på den øverste bjælke)
 

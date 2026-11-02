@@ -511,7 +511,9 @@ function onSwipeDown(e) {
   if (!el || e.target.closest('.swipe-del') || (e.pointerType === 'mouse' && e.button !== 0)) return;
   if (swipeOpen && swipeOpen !== el) closeSwipe();
   const base = swipeOpen === el ? -SWIPE_OPEN : 0;
-  swipe = { el, id: e.pointerId, x0: e.clientX, y0: e.clientY, base, x: base, dir: null };
+  // Forudsigelsen er beskyttet: den giver kun lidt efter og glider tilbage
+  const locked = el.dataset.swipe === 'prediction';
+  swipe = { el, id: e.pointerId, x0: e.clientX, y0: e.clientY, base, x: base, dir: null, locked };
 }
 
 function onSwipeMove(e) {
@@ -524,6 +526,10 @@ function onSwipeMove(e) {
     if (swipe.dir === 'y') { swipe = null; return; }
     try { swipe.el.setPointerCapture(e.pointerId); } catch { /* ok */ }
   }
+  if (swipe.locked) {
+    swipe.el.querySelector('.row').style.transform = `translateX(${Math.max(-24, Math.min(12, dx / 5))}px)`;
+    return;
+  }
   let x = swipe.base + dx;
   if (x > 0) x = x / 4; // lidt modstand mod højre
   x = Math.max(-swipe.el.offsetWidth, x);
@@ -533,11 +539,12 @@ function onSwipeMove(e) {
 
 function onSwipeUp(e) {
   if (!swipe || e.pointerId !== swipe.id) return;
-  const { el, x, dir } = swipe;
+  const { el, x, dir, locked } = swipe;
   swipe = null;
   if (dir !== 'x') return;
   swipeJustMoved = true;
   window.setTimeout(() => { swipeJustMoved = false; }, 50);
+  if (locked) { setSwipe(el, 0, true); return; }
   if (-x > el.offsetWidth * 0.55) removeWithSwipe(el);
   else if (-x > SWIPE_OPEN / 2) { setSwipe(el, -SWIPE_OPEN, true); swipeOpen = el; }
   else { setSwipe(el, 0, true); if (swipeOpen === el) swipeOpen = null; }
