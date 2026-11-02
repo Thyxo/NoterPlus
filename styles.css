@@ -408,7 +408,7 @@ button {
 }
 .row:active { background: var(--row-active); }
 
-.row + .row::before {
+.swipe + .swipe .row::before {
   content: "";
   position: absolute;
   top: 0;
@@ -1360,3 +1360,46 @@ details[open] > summary .chev { transform: rotate(-45deg); margin-top: 4px; }
 .diag { margin: 10px 4px 0; font-size: 11px; color: var(--label3); text-align: center; }
 [data-s="waiting"] .dot { background: #0a84ff; animation: pulse 1.6s ease-in-out infinite; }
 [data-s="waiting"] .lk-state b { color: #0a84ff; }
+
+/* Swipe for at slette (notelisten) */
+.swipe {
+  position: relative;
+  overflow: hidden;
+  touch-action: pan-y;
+}
+.swipe .row {
+  background: var(--card);
+  will-change: transform;
+}
+.swipe.anim .row { transition: transform 0.3s var(--ease), background 0.12s; }
+.swipe-del {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 0;
+  padding: 0;
+  overflow: hidden;
+  visibility: hidden;
+  background: #ff3b30;
+  color: #fff;
+}
+.swipe.showing .swipe-del { visibility: visible; }
+@media (prefers-color-scheme: dark) { .swipe-del { background: #ff453a; } }
+.swipe.anim .swipe-del { transition: width 0.3s var(--ease); }
+.swipe-del svg {
+  position: absolute;
+  top: 50%;
+  right: 30px;
+  margin-top: -12px;
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* Langt træk: ikonet følger rækkens kant, som i iOS */
+.swipe.full .swipe-del svg { right: auto; left: 30px; }
+.swipe.gone { transition: height 0.26s var(--ease), opacity 0.26s; opacity: 0; }

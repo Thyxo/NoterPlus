@@ -43,6 +43,7 @@ const fallbackState = {
   calcResult: null, // { value, at }
   selectedNote: 'prediction',
   userNotes: [],
+  hiddenNotes: [], // faste noter slettet med swipe
   images: {},
 };
 
@@ -373,7 +374,7 @@ function getNotes() {
       preview: 'Nøgle til kælderen hos viceværten',
       body: ['Nøgle til kælderen hos viceværten', 'Dæk til den lilles cykel: 24"', 'Lappegrej i skuffen'],
     },
-  ].filter(Boolean);
+  ].filter((n) => n && !state.hiddenNotes.includes(n.id));
   for (const u of state.userNotes) {
     if (u.ink) {
       // iOS bruger den genkendte håndskrift som titel
@@ -453,7 +454,98 @@ function renderFolders() {
     .join('');
 }
 
+const TRASH = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 6.5h15M9.5 6.5V4.8c0-.7.6-1.3 1.3-1.3h2.4c.7 0 1.3.6 1.3 1.3v1.7M6.5 6.5l.9 12.6c.1 1 .9 1.9 2 1.9h5.2c1.1 0 1.9-.9 2-1.9l.9-12.6M10 10.5v6.5M14 10.5v6.5"/></svg>';
+
+/* Slet en note fra listen. Forudsigelsen skjules kun (kan vises igen i panelet) */
+function deleteNote(id) {
+  if (id === 'prediction') state.showPrediction = false;
+  else if (state.userNotes.some((u) => u.id === id)) state.userNotes = state.userNotes.filter((u) => u.id !== id);
+  else if (!state.hiddenNotes.includes(id)) state.hiddenNotes = [...state.hiddenNotes, id];
+  if (state.images?.[id]) {
+    const { [id]: _, ...rest } = state.images;
+    state.images = rest;
+  }
+  if (state.selectedNote === id) state.selectedNote = state.showPrediction ? 'prediction' : '';
+  saveState();
+  renderNotes();
+  renderNotePage();
+}
+
+/* ---------------- swipe for at slette (som i iOS) ---------------- */
+
+const SWIPE_OPEN = 84; // bredde på slet-knappen, når rækken står åben
+let swipe = null; // igangværende træk
+let swipeOpen = null; // rækken der står åben
+let swipeJustMoved = false;
+
+function setSwipe(el, x, animate) {
+  const row = el.querySelector('.row');
+  const del = el.querySelector('.swipe-del');
+  el.classList.toggle('anim', !!animate);
+  row.style.transform = x ? `translateX(${x}px)` : '';
+  del.style.width = `${Math.max(0, -x)}px`;
+  el.classList.toggle('full', -x > el.offsetWidth * 0.55);
+  if (x < 0) el.classList.add('showing');
+  else if (animate) window.setTimeout(() => { if (!row.style.transform) el.classList.remove('showing'); }, 320);
+  else el.classList.remove('showing');
+}
+
+function closeSwipe(animate = true) {
+  if (swipeOpen) setSwipe(swipeOpen, 0, animate);
+  swipeOpen = null;
+}
+
+function removeWithSwipe(el) {
+  const id = el.dataset.swipe;
+  setSwipe(el, -el.offsetWidth, true);
+  el.style.height = `${el.offsetHeight}px`;
+  el.getBoundingClientRect();
+  el.classList.add('gone');
+  el.style.height = '0px';
+  swipeOpen = null;
+  window.setTimeout(() => deleteNote(id), 260);
+}
+
+function onSwipeDown(e) {
+  const el = e.target.closest('.swipe');
+  if (!el || e.target.closest('.swipe-del') || (e.pointerType === 'mouse' && e.button !== 0)) return;
+  if (swipeOpen && swipeOpen !== el) closeSwipe();
+  const base = swipeOpen === el ? -SWIPE_OPEN : 0;
+  swipe = { el, id: e.pointerId, x0: e.clientX, y0: e.clientY, base, x: base, dir: null };
+}
+
+function onSwipeMove(e) {
+  if (!swipe || e.pointerId !== swipe.id) return;
+  const dx = e.clientX - swipe.x0;
+  const dy = e.clientY - swipe.y0;
+  if (!swipe.dir) {
+    if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+    swipe.dir = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+    if (swipe.dir === 'y') { swipe = null; return; }
+    try { swipe.el.setPointerCapture(e.pointerId); } catch { /* ok */ }
+  }
+  let x = swipe.base + dx;
+  if (x > 0) x = x / 4; // lidt modstand mod højre
+  x = Math.max(-swipe.el.offsetWidth, x);
+  swipe.x = x;
+  setSwipe(swipe.el, x, false);
+}
+
+function onSwipeUp(e) {
+  if (!swipe || e.pointerId !== swipe.id) return;
+  const { el, x, dir } = swipe;
+  swipe = null;
+  if (dir !== 'x') return;
+  swipeJustMoved = true;
+  window.setTimeout(() => { swipeJustMoved = false; }, 50);
+  if (-x > el.offsetWidth * 0.55) removeWithSwipe(el);
+  else if (-x > SWIPE_OPEN / 2) { setSwipe(el, -SWIPE_OPEN, true); swipeOpen = el; }
+  else { setSwipe(el, 0, true); if (swipeOpen === el) swipeOpen = null; }
+}
+
 function renderNotes() {
+  swipe = null;
+  swipeOpen = null;
   const notes = getNotes();
   noteGroupsEl.innerHTML = groupOrder
     .map(([id, label, collapsible]) => {
@@ -469,10 +561,13 @@ function renderNotes() {
             ${rows
               .map(
                 (note) => `
-                <button class="row ${note.id === state.selectedNote ? 'selected' : ''}" type="button" data-note="${note.id}">
-                  <h3>${esc(note.title)}</h3>
-                  <div class="meta"><span>${esc(note.date)}</span><span class="prev">${esc(note.preview)}</span></div>
-                </button>`,
+                <div class="swipe" data-swipe="${note.id}">
+                  <button class="swipe-del" type="button" data-del="${note.id}" aria-label="Slet" tabindex="-1">${TRASH}</button>
+                  <button class="row ${note.id === state.selectedNote ? 'selected' : ''}" type="button" data-note="${note.id}">
+                    <h3>${esc(note.title)}</h3>
+                    <div class="meta"><span>${esc(note.date)}</span><span class="prev">${esc(note.preview)}</span></div>
+                  </button>
+                </div>`,
               )
               .join('')}
           </div>
@@ -808,6 +903,9 @@ function syncPanel() {
   homeSel.value = fakeHome.mode;
   syncLinkStatus();
   syncSummaries();
+  const gone = state.hiddenNotes.length + (state.showPrediction ? 0 : 1);
+  $('#restoreNotes').hidden = !gone;
+  $('#restoreNotes span').textContent = `Gendan slettede noter (${gone})`;
   renderPreview();
   if (isFontReady() && $('#glyphSec').open) renderGlyphGrid();
   else syncGlyphSummary();
@@ -1039,9 +1137,30 @@ function registerEvents() {
       collapse.closest('.sec').classList.toggle('collapsed');
       return;
     }
+    const del = event.target.closest('[data-del]');
+    if (del) {
+      removeWithSwipe(del.closest('.swipe'));
+      return;
+    }
+    if (swipeJustMoved) return;
+    // Tryk mens en række står åben: luk den i stedet for at åbne noten
+    if (swipeOpen) {
+      closeSwipe();
+      return;
+    }
     const row = event.target.closest('[data-note]');
     if (row) openNote(row.dataset.note);
   });
+  noteGroupsEl.addEventListener('pointerdown', onSwipeDown);
+  noteGroupsEl.addEventListener('pointermove', onSwipeMove);
+  noteGroupsEl.addEventListener('pointerup', onSwipeUp);
+  noteGroupsEl.addEventListener('pointercancel', (e) => {
+    if (swipe?.dir === 'x') onSwipeUp(e);
+    else swipe = null;
+  });
+  // Scroll eller tryk uden for listen lukker en åben række
+  $('[data-scroll="screenNotes"]').addEventListener('scroll', () => { if (swipeOpen && !swipe) closeSwipe(); }, { passive: true });
+  document.addEventListener('pointerdown', (e) => { if (swipeOpen && !swipeOpen.contains(e.target)) closeSwipe(); });
 
   document.querySelectorAll('#newNoteButton, [data-new-note]').forEach((button) => {
     button.addEventListener('click', () => {
@@ -1135,6 +1254,14 @@ function registerEvents() {
     lastSentKey = '';
     publishForce({ now: true });
     syncLinkStatus();
+  });
+
+  $('#restoreNotes').addEventListener('click', () => {
+    state.hiddenNotes = [];
+    state.showPrediction = true;
+    saveState();
+    syncPanel();
+    renderAll();
   });
 
   $('#clearUserNotes').addEventListener('click', () => {

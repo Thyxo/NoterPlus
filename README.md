@@ -59,6 +59,13 @@ Uden fonten virker kun bogstaverne **O I L Z E h S g B G t b**, fx *LISE* = 3517
 
 ---
 
+## Slet noter med swipe
+
+Som på iPhone: træk en note **til venstre** i listen. Et kort træk viser den røde slet-knap, og et langt træk sletter med det samme. Tryk et andet sted for at lukke knappen igen.
+
+- Tilskuernes egne noter slettes helt.
+- *Forudsigelse* og de faste noter bliver kun skjult. Panel → **Noten → Gendan slettede noter** henter dem tilbage.
+
 ## Panelet (3 tryk på den øverste bjælke)
 
 Øverst står et **overblik**, der altid er synligt: tallet lommeregneren viser, tegningen begge veje, mærker for font, forbindelse og navn, og advarsler. Resten er **sammenklappelige sektioner**. Lukket viser hver sektion et kort resumé (fx *Top ← · plet ↗*). Appen husker, hvilke der er åbne. **OK** sidder øverst til højre.
