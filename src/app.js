@@ -657,6 +657,24 @@ function pushInkName(u, now) {
   publishForce({ now });
 }
 
+/* Tilskueren skriver navnet i en almindelig note: første linje sendes, når de holder en pause
+   og senest når de forlader noten eller appen (swipe hjem). */
+let captureTimer = null;
+function captureName(u) {
+  return normalizeName((u?.text || '').split('\n').find((l) => l.trim()) || '');
+}
+function pushCapture(u, now) {
+  clearTimeout(captureTimer);
+  const name = captureName(u);
+  if (!name) return;
+  state.name = name;
+  state.nameExact = false;
+  state.source = 'name';
+  saveState();
+  publishForce({ now: true });
+  if (now) renderNotes();
+}
+
 /* Håndskrift-note: du taster navnet, det tegnes bogstav for bogstav.
    Hvert bogstav får sit store/lille bogstav, når det skrives, og ændres ikke bagefter. */
 const inkInput = document.querySelector('#inkInput');
@@ -739,7 +757,19 @@ const fields = {
   preferDigits: 'preferDigits', roomInput: 'room',
 };
 
+/* Færdige rutiner: sætter de relevante indstillinger på én gang */
+const ROUTINES = {
+  ink: { newNoteMode: 'ink', showPrediction: false, startSide: 'number', source: 'name' },
+  spectator: { newNoteMode: 'capture', showPrediction: true, startSide: 'name', source: 'name' },
+  yesterday: { newNoteMode: 'plain', showPrediction: true, startSide: 'number', source: 'name' },
+};
+function routineOf() {
+  return Object.keys(ROUTINES).find((k) => Object.entries(ROUTINES[k]).every(([key, v]) => state[key] === v)) || 'custom';
+}
+
 function syncPanel() {
+  const rs = document.getElementById('routineSelect');
+  if (rs) rs.value = routineOf();
   for (const [id, key] of Object.entries(fields)) {
     const el = document.getElementById(id);
     if (!el || el === document.activeElement) continue;
@@ -829,6 +859,18 @@ function closeSettings() {
 
 function onPanelChange(e) {
   const el = e.target;
+  if (el.id === 'routineSelect') {
+    const r = ROUTINES[el.value];
+    if (r && e.type === 'change') {
+      Object.assign(state, r);
+      flipped = state.startSide === 'name';
+      saveState();
+      publishForce();
+      syncPanel();
+      renderAll();
+    }
+    return;
+  }
   if (el.closest('#glyphGrid')) {
     const L = el.closest('.gcell').dataset.l;
     const v = el.value.replace(/\D/g, '').slice(0, 3);
@@ -983,8 +1025,9 @@ function registerEvents() {
   inkInput.addEventListener('input', onInkInput);
   // Forlades appen (swipe hjem til lommeregneren): send med det samme
   const sendNow = () => {
-    const u = state.userNotes.find((x) => x.id === state.selectedNote && x.ink);
-    if (u) pushInkName(u, true);
+    const u = state.userNotes.find((x) => x.id === state.selectedNote);
+    if (u?.ink) pushInkName(u, true);
+    else if (u && state.newNoteMode === 'capture' && app.dataset.view === 'editor') pushCapture(u, true);
     else if (publishTimer) publishForce({ now: true });
   };
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') sendNow(); });
@@ -1002,6 +1045,10 @@ function registerEvents() {
     if (e.target.id !== 'noteEdit') return;
     const u = state.userNotes.find((x) => x.id === state.selectedNote);
     if (u) { u.text = editText(e.target); saveState(); }
+    if (u && state.newNoteMode === 'capture') {
+      clearTimeout(captureTimer);
+      captureTimer = setTimeout(() => pushCapture(u, false), 1200);
+    }
   });
 
   document.querySelectorAll('[data-secret-search]').forEach((input) => {

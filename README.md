@@ -22,6 +22,18 @@ Den viser en "håndskrevet" note. Holdt normalt står der et tal. Vendes telefon
 - **Den hurtige plet** vender også denne note. Prikken viser, når tallet står op.
 - **Lås skærmrotation** på iPhonen (Kontrolcenter), ellers drejer hele appen med.
 
+## Rutine 3: Tilskueren skriver – din note matcher – stopuret giver tallet
+
+Panel → **Rutine → Tilskueren skriver → din note**.
+
+1. Tilskueren trykker **ny note** og skriver sit navn helt normalt, fx *Mads*. Første linje fanges.
+2. De forlader Noter. De kan trykke tilbage eller swipe hjem. Navnet er allerede sendt efter en kort pause, og ellers sendes det i samme øjeblik appen forlades.
+3. Stopuret (Stopwatchplus med samme kode) får tallet, fx 50041, i rutinen *Noter+ (live)*.
+4. Tilskueren stopper uret, og tallet står på uret. Langt tal = flere runder, fx `05 · 00 · 41`.
+5. Du åbner **Forudsigelse**: navnet står i håndskrift, liggende, og matcher det, de skrev. Vend telefonen 180°, så står tallet fra stopuret.
+
+Rutinen slår *Ny note → Tilskueren skriver*, *Vis noten i listen* og *Når noten åbnes → Navnet op* til på én gang.
+
 ## Rutine 2: Forudsigelse skrevet "i går"
 
 1. **Navnet.** Tilskueren tænker på et navn, fx *Mads*. Du får det på en af tre måder:
