@@ -195,3 +195,9 @@ Tjek et nyt navn i forhåndsvisningen, før du optræder. Den viser begge veje.
 - **To tilskuere:** den ene tænker på et navn, den anden regner. Summen bliver navnets tal.
 - **Ord i stedet for navne:** by, dyr, kort ("ES" = 53).
 - **Vend uden at røre:** brug telefonens bevægelsessensor, så tegningen skifter, når telefonen lægges med skærmen ned.
+
+## Fake Google → forudsigelse
+
+Når tilskueren søger på Fake Google (soeg.vercel.app) i samme rum, regner Noter+ ordet om med `src/cryptext.js` (`wordToDigits`, fx "mads" → 59841) og sender det som `force`. Forudsigelses-noten tegnes med præcis det ord. Panelet → Forbindelse: kontakten **Modtag fra Google** (standard til) og "Fra Google: mads → 59841". Hvert søgeord bruges kun én gang (`googleAt`). Bogstaver uden Cryptext-tegn (æ ø å, tal) springes over og giver en advarsel.
+
+`src/cryptext.js` ejes her og kopieres uændret til Calcplus og Stopwatchplus.

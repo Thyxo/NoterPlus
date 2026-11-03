@@ -1,6 +1,6 @@
-const CACHE_NAME = "noterplus-v9";
+const CACHE_NAME = "noterplus-v10";
 const ASSETS = ["./", "./index.html", "./styles.css", "./fakehome.js", "./manifest.webmanifest",
-  "./src/app.js", "./src/crypt.js", "./src/link.js", "./src/font.js", "./src/known.js",
+  "./src/app.js", "./src/crypt.js", "./src/link.js", "./src/font.js", "./src/known.js", "./src/cryptext.js",
   "./home/page1.webp", "./home/page2.webp", "./home/page3.webp",
   "./home/dots1.png", "./home/dots2.png", "./home/dots3.png",
   "./home/dock.webp", "./home/noter.png",

@@ -9,6 +9,7 @@ import {
   renderInk, renderGlyph, calibrate, LETTERS,
 } from './font.js';
 import { KNOWN_FONTS } from './known.js';
+import { wordToDigits } from './cryptext.js';
 
 /* ---------------- tilstand ---------------- */
 
@@ -34,6 +35,9 @@ const fallbackState = {
   flipCorner: 'tr',
   flipStyle: 'instant',
   tellDot: true,
+  googleIn: true, // Modtag fra Google (soeg.vercel.app)
+  googleAt: 0, // sidst brugte google.at – samme ord bruges aldrig to gange
+  googleLast: null, // {q, digits, unsupported} til panelet
   letterRot: 'auto',
   preferDigits: false,
   manualMap: {},
@@ -153,10 +157,31 @@ function setName(raw, exact = false) {
 
 /* ---------------- forbindelse ---------------- */
 
+/* Søgning fra Fake Google: ordet bliver forudsigelsen, tallet sendes som force */
+function onGoogle(g) {
+  if (!g || typeof g.q !== 'string' || !(g.at > (state.googleAt || 0))) return false;
+  state.googleAt = g.at; // også når den er slået fra: et gammelt ord må ikke bruges senere
+  if (!state.googleIn) { saveState(); return false; }
+  const r = wordToDigits(g.q);
+  state.googleLast = { q: g.q, digits: r.digits, unsupported: r.unsupported, at: g.at };
+  if (!r.digits) { saveState(); return true; }
+  state.source = 'name';
+  state.name = r.name; // tegnes præcis som wordToDigits valgte store/små
+  state.nameExact = true;
+  const force = { digits: r.digits, name: r.name, by: 'notes', via: 'google', q: g.q, at: Date.now() };
+  state.force = force;
+  lastSentKey = `${force.digits}|${force.name}`;
+  clearTimeout(publishTimer);
+  publishTimer = null;
+  saveState();
+  link?.publish({ force, cmap: cmapPayload() });
+  return true;
+}
+
 function onRemote(remote) {
-  let changed = false;
+  let changed = onGoogle(remote.google);
   const f = remote.force;
-  if (f && f.by !== 'notes' && f.at > (state.force?.at || 0)) {
+  if (f && f.by !== 'notes' && f.at > (state.force?.at || 0) && f.digits !== state.force?.digits) {
     state.force = f;
     if (f.name) {
       state.source = 'name';
@@ -885,7 +910,7 @@ const fields = {
   nameInput: 'name', caseSelect: 'caseMode', numberInput: 'number',
   capSearch: 'capSearch', newNoteMode: 'newNoteMode', inkLie: 'inkLie', showPrediction: 'showPrediction', noteTitle: 'noteTitle', noteText: 'noteText',
   noteWhen: 'noteWhen', inkColor: 'inkColor', inkSize: 'inkSize', startSide: 'startSide',
-  flipCorner: 'flipCorner', flipStyle: 'flipStyle', tellDot: 'tellDot', letterRot: 'letterRot',
+  flipCorner: 'flipCorner', flipStyle: 'flipStyle', tellDot: 'tellDot', googleIn: 'googleIn', letterRot: 'letterRot',
   preferDigits: 'preferDigits', roomInput: 'room',
 };
 
@@ -934,6 +959,10 @@ function syncPanel() {
   $('#fontStatus').textContent = isFontReady()
     ? `${loadedFontName()}${knownFont() ? ' – kendt font, tabel klar' : state.calib ? ' – kalibreret' : ''}`
     : 'Ingen font – kun O I L Z E h S g B G t b';
+  const gl = state.googleLast;
+  $('#googleLast').textContent = gl ? `${gl.q} → ${gl.digits || '–'}` : '–';
+  $('#googleWarn').hidden = !gl?.unsupported?.length;
+  $('#googleWarn').textContent = gl?.unsupported?.length ? `Uden Cryptext-tegn (sprunget over): ${gl.unsupported.join(' ')}` : '';
   $('#lastResult').textContent = state.calcResult ? `${state.calcResult.value}${state.calcResult.forced ? ' (force)' : ''}` : '–';
   const homeSel = $('#homeModeSelect');
   homeSel.querySelector("[value='custom']").disabled = !fakeHome.hasCustom();
